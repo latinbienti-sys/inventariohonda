@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario Vehículos Honda — LatinBienMotors</title>
+<style>
+  :root{
+    --honda-red: #cc0000;
+    --honda-blue: #16213e;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1c2333;
+    --muted: #5c6b8a;
+    --accent: #0f3460;
+    --border: #e3e8f2;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); padding:24px; }
+  .wrap{ max-width:1200px; margin:0 auto; }
+
+  header{
+    background:linear-gradient(135deg, var(--honda-blue), var(--accent));
+    color:#fff; border-radius:14px; padding:22px 26px;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:16px; box-shadow:0 8px 22px rgba(0,0,0,.12);
+  }
+  header .logo{ font-size:26px; font-weight:800; letter-spacing:.5px; }
+  header .logo span{ color:#ffd24a; }
+  header .meta{ font-size:13px; opacity:.9; text-align:right; }
+
+  .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin:22px 0; }
+  .kpi{ background:var(--card); border-radius:12px; padding:18px; box-shadow:0 3px 10px rgba(0,0,0,.05); border-top:4px solid var(--accent); }
+  .kpi .v{ font-size:32px; font-weight:800; color:var(--accent); }
+  .kpi .l{ font-size:13px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
+  .kpi.green{ border-top-color:#1e9e5a;} .kpi.green .v{ color:#1e9e5a;}
+  .kpi.yellow{ border-top-color:#f59e0b;} .kpi.yellow .v{ color:#b45309;}
+  .kpi.red{ border-top-color:var(--honda-red);} .kpi.red .v{ color:var(--honda-red);}
+
+  .grid{ display:grid; gap:16px; margin-bottom:16px; }
+  .grid.cols-2{ grid-template-columns:1fr 1fr; }
+  @media(max-width:900px){ .grid.cols-2{ grid-template-columns:1fr; } }
+
+  .card{ background:var(--card); border-radius:12px; padding:18px; box-shadow:0 3px 10px rgba(0,0,0,.05); }
+  .card h3{ font-size:15px; color:var(--accent); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .card h3::before{ content:''; width:6px; height:18px; background:#cc0000; border-radius:3px; }
+
+  /* ---------- BARRAS SIMPLES ---------- */
+  .bars{ width:100%; height:240px; display:flex; align-items:flex-end; gap:10px; }
+  .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
+  .bar-col .bar{
+    width:100%; max-width:70px; border-radius:8px 8px 0 0;
+    background:linear-gradient(180deg, #cc0000, #8c0000);
+    position:relative; transition:height .6s ease;
+  }
+  .bar-col .bar .cnt{ position:absolute; top:-26px; left:0; right:0; text-align:center; font-weight:800; color:#222; font-size:16px; }
+  .bar-col .lab{ margin-top:8px; font-size:11px; color:var(--muted); text-align:center; word-break:break-word; }
+
+  /* ---------- TARJETAS DE COLORES POR MODELO ---------- */
+  .model-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .model-card{
+    background:linear-gradient(160deg,#f9fbff,#ffffff);
+    border:1px solid var(--border); border-radius:14px; padding:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,.06); transition:transform .2s, box-shadow .2s;
+  }
+  .model-card:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(0,0,0,.10); }
+  .mc-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .mc-name{ font-weight:800; font-size:15px; color:var(--honda-blue); letter-spacing:.2px; }
+  .mc-total{ background:var(--honda-blue); color:#fff; border-radius:20px; padding:3px 13px; font-weight:800; font-size:15px; }
+  .mc-bar{ display:flex; height:14px; border-radius:8px; overflow:hidden; margin-bottom:12px; background:#eef1f8; }
+  .mc-seg{ height:100%; transition:width .7s ease; }
+  .mc-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    background:#fff; border:1px solid var(--border); border-radius:20px;
+    padding:4px 10px; font-size:12px; color:var(--text);
+  }
+  .chip .sw{ width:12px; height:12px; border-radius:50%; border:1px solid rgba(0,0,0,.12); }
+  .chip b{ color:var(--accent); margin-left:2px; }
+
+  /* ---------- Tabla ---------- */
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th,td{ padding:9px 10px; text-align:left; border-bottom:1px solid var(--border); }
+  th{ background:var(--honda-blue); color:#fff; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.4px; }
+  tr:nth-child(even){ background:#f8faff; }
+  .badge{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#fff; }
+  .b-cons{ background:#1e9e5a; } .b-res{ background:#f59e0b; } .b-rep{ background:#e11d48; } .b-lat{ background:#536dfe; }
+  footer{ text-align:center; margin-top:18px; font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="logo">Inventario Vehículos <span>HONDA</span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Honda Mérida — LatinBienMotors, C.A.</div>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi"><div class="v">15</div><div class="l">Total unidades en inventario</div></div>
+    <div class="kpi green"><div class="v">13</div><div class="l">Almacén Consignación</div></div>
+    <div class="kpi yellow"><div class="v">1</div><div class="l">Almacén Reservas</div></div>
+    <div class="kpi red"><div class="v">1</div><div class="l">Almacén Reparación</div></div>
+  </div>
+
+  <!-- Gráfico principal: Colores por modelo -->
+  <div class="card" style="margin-bottom:16px;">
+    <h3>Colores por Modelo</h3>
+    <div class="model-grid" id="modelosGrid"></div>
+  </div>
+
+  <!-- Gráficos secundarios -->
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Unidades por Almacén</h3>
+      <div class="bars" id="barsAlmacen"></div>
+    </div>
+    <div class="card">
+      <h3>Resumen por Modelo</h3>
+      <table>
+        <thead><tr><th>Modelo</th><th>Unidades</th></tr></thead>
+        <tbody id="tblResumen"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabla detalle completa -->
+  <div class="card">
+    <h3>Detalle del inventario (por unidad — VIN)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Modelo</th><th>Color</th>
+          <th>Almacén</th><th>VIN</th>
+        </tr>
+      </thead>
+      <tbody id="tblDet"></tbody>
+    </table>
+  </div>
+
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos</footer>
+</div>
+
+<script>
+"use strict";
+
+// ================== DATOS ==================
+const unidades = [
+  { modelo:"HONDA CITY 1.5L A/T EXL 2026", cat:"CASO DE USO 1", color:"Azul Cosmico",   alma:"CONSIGNACION", res:false, vin:"93HGN2670TK600273" },
+  { modelo:"HONDA CITY 1.5L A/T EXL 2026", cat:"CASO DE USO 1", color:"Blanco Perlado", alma:"CONSIGNACION", res:true,  vin:"93HGN2670TK600220" },
+  { modelo:"HONDA CITY 1.5L A/T EXL 2026", cat:"CASO DE USO 1", color:"Gris Metalico",  alma:"CONSIGNACION", res:false, vin:"93HGN2670TK600247" },
+  { modelo:"HONDA HR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Azul Cosmico",   alma:"CONSIGNACION", res:false, vin:"93HRV3860TK304041" },
+  { modelo:"HONDA HR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Gris Metalico",  alma:"CONSIGNACION", res:true,  vin:"93HRV3860TK304092" },
+  { modelo:"HONDA HR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Plata Metalico", alma:"CONSIGNACION", res:false, vin:"93HRV3860TK304112" },
+  { modelo:"HONDA WR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Plata Metalico", alma:"CONSIGNACION", res:false, vin:"93HDG5840TK502944" },
+  { modelo:"HONDA WR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Azul Cosmico",   alma:"CONSIGNACION", res:false, vin:"93HDG5840TK503992" },
+  { modelo:"HONDA WR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Blanco",         alma:"CONSIGNACION", res:false, vin:"93HDG5840TK503048" },
+  { modelo:"HONDA WR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Azul Cosmico",   alma:"CONSIGNACION", res:false, vin:"93HDG5840TK503985" },
+  { modelo:"HONDA WR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Azul Nordico",   alma:"CONSIGNACION", res:false, vin:"93HDG5840TK503972" },
+  { modelo:"HONDA WR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Blanco",         alma:"CONSIGNACION", res:false, vin:"93HDG5840TK503056" },
+  { modelo:"HONDA HR-V 1.5L A/T EXL 2026", cat:"CASO DE USO 3", color:"Gris Metalico",  alma:"CONSIGNACION", res:false, vin:"93HRV3060TK304083" },
+  { modelo:"HONDA HR-V 1.5L A/T LX 2026",  cat:"ALL",           color:"Blanco Perlado", alma:"RESERVAS",     res:false, vin:"93HRV3820TK303832" },
+  { modelo:"HONDA HR-V 1.5L A/T LX 2026",  cat:"ALL",           color:"Plata Metalico", alma:"REPARACION",   res:false, vin:"93HRV3860TK303206" }
+];
+
+const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
+
+const COLOR_HEX = {
+  "Azul Cosmico":   "#0ea5e9",
+  "Azul Nordico":   "#4f46e5",
+  "Blanco":         "#fafafa",
+  "Blanco Perlado": "#e5e7eb",
+  "Gris Metalico":  "#9ca3af",
+  "Plata Metalico": "#d1d5db",
+  "Rojo Metalico":  "#cc0000"
+};
+
+// ---------- Colores por modelo (tarjetas) ----------
+function shortModel(m){
+  return m.replace("HONDA ", "").replace(" 2026", "").replace("1.5L A/T ", "").trim();
+}
+
+const modelos = {};
+unidades.forEach(u => {
+  const sm = shortModel(u.modelo);
+  if (!modelos[sm]) modelos[sm] = {};
+  modelos[sm][u.color] = (modelos[sm][u.color] || 0) + 1;
+});
+
+const gridEl = document.getElementById("modelosGrid");
+gridEl.innerHTML = Object.keys(modelos).map(m => {
+  const colores = Object.entries(modelos[m]).sort((a,b) => b[1]-a[1]);
+  const total = colores.reduce((s,c)=>s+c[1],0);
+  const segs = colores.map(([c, n]) =>
+    `<div class="mc-seg" style="width:${(n/total*100).toFixed(1)}%;background:${COLOR_HEX[c]||'#94a3b8'}" title="${c}: ${n}"></div>`
+  ).join("");
+  const chips = colores.map(([c, n]) =>
+    `<span class="chip"><span class="sw" style="background:${COLOR_HEX[c]||'#94a3b8'}"></span>${c} <b>${n}</b></span>`
+  ).join("");
+  return `<div class="model-card">
+            <div class="mc-head"><span class="mc-name">${m}</span><span class="mc-total">${total}</span></div>
+            <div class="mc-bar">${segs}</div>
+            <div class="mc-chips">${chips}</div>
+          </div>`;
+}).join("");
+
+// ---------- Barras: unidades por almacén ----------
+const ALMACEN_COLOR = { "CONSIGNACION":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "LATIN":"#536dfe" };
+function buildBars(id, data, colorMap){
+  const max = Math.max(...Object.values(data), 1);
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  Object.entries(data).forEach(([k, v]) => {
+    const col = document.createElement("div");
+    col.className = "bar-col";
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.height = (v / max * 100).toFixed(1) + "%";
+    bar.style.background = colorMap[k] || "#cc0000";
+    const cnt = document.createElement("span");
+    cnt.className = "cnt"; cnt.textContent = v;
+    bar.appendChild(cnt);
+    const lab = document.createElement("span");
+    lab.className = "lab"; lab.textContent = k;
+    col.appendChild(bar); col.appendChild(lab);
+    el.appendChild(col);
+  });
+}
+const porAlma = group(unidades.map(u => u.alma));
+buildBars("barsAlmacen", porAlma, ALMACEN_COLOR);
+
+// ---------- Tabla resumen por modelo ----------
+const porModelo = group(unidades.map(u => shortModel(u.modelo)));
+const tblResumen = document.getElementById("tblResumen");
+tblResumen.innerHTML = Object.entries(porModelo).map(([m, n]) =>
+  `<tr><td>${m}</td><td><b>${n}</b></td></tr>`
+).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.length}</td></tr>`;
+
+// ---------- Tabla detalle ----------
+const bdg = a => a === "CONSIGNACION" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
+const tblDet = document.getElementById("tblDet");
+tblDet.innerHTML = unidades.map((u, i) => `
+  <tr>
+    <td>${i + 1}</td>
+    <td>${u.modelo}</td>
+    <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[u.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${u.color}</td>
+    <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
+    <td style="font-family:Consolas,monospace">${u.vin}</td>
+  </tr>`).join("");
+</script>
+</body>
+</html>
