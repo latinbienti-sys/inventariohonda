@@ -78,6 +78,19 @@
   .chip .sw{ width:12px; height:12px; border-radius:50%; border:1px solid rgba(0,0,0,.12); }
   .chip b{ color:var(--accent); margin-left:2px; }
 
+  /* ---------- Stock Real por Modelo ---------- */
+  .card h3 .sr-legend{ margin-left:auto; font-size:12px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .sr-legend .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .dot.d-av{ background:#1e9e5a; } .dot.d-res{ background:#f59e0b; }
+  .stock-row{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .stock-name{ min-width:138px; font-size:13px; font-weight:700; color:var(--honda-blue); }
+  .stock-bar{ flex:1; height:26px; border-radius:8px; overflow:hidden; display:flex; background:#eef1f8; }
+  .stock-av{ background:linear-gradient(180deg,#34c07a,#1e9e5a); height:100%; }
+  .stock-res{ background:linear-gradient(180deg,#fbbf24,#f59e0b); height:100%; }
+  .stock-nums{ min-width:148px; font-size:12px; color:var(--text); text-align:right; white-space:nowrap; }
+  .stock-nums b{ color:#1e9e5a; }
+  .stock-nums b.r{ color:#b45309; }
+
   /* ---------- Tabla ---------- */
   table{ width:100%; border-collapse:collapse; font-size:13px; }
   th,td{ padding:9px 10px; text-align:left; border-bottom:1px solid var(--border); }
@@ -104,6 +117,12 @@
     <div class="kpi green"><div class="v">8</div><div class="l">Almacén Consignación</div></div>
     <div class="kpi yellow"><div class="v">6</div><div class="l">Almacén Reservas</div></div>
     <div class="kpi red"><div class="v">1</div><div class="l">Almacén Reparación</div></div>
+  </div>
+
+  <!-- Stock Real por Modelo -->
+  <div class="card" style="margin-bottom:16px;">
+    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado</span></h3>
+    <div id="stockReal"></div>
   </div>
 
   <!-- Gráfico principal: Colores por modelo -->
@@ -141,7 +160,7 @@
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-10 16:08 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-10 16:14 UTC</span></footer>
 </div>
 
 <script>
@@ -190,6 +209,41 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
             <div class="mc-chips">${chips}</div>
           </div>`;
 }).join("");
+
+// ---------- Stock Real por Modelo (reservado vs disponible) ----------
+const isReserv = u => u.alma === "RESERVAS" || u.res;
+const stockModelo = {};
+unidades.forEach(u => {
+  const sm = shortModel(u.modelo);
+  if (!stockModelo[sm]) stockModelo[sm] = { total: 0, res: 0 };
+  stockModelo[sm].total++;
+  if (isReserv(u)) stockModelo[sm].res++;
+});
+function stockRowHtml(nombre, d) {
+  const av = d.total - d.res;
+  const pAv = d.total ? (av / d.total * 100).toFixed(1) : 0;
+  const pRes = d.total ? (d.res / d.total * 100).toFixed(1) : 0;
+  return `<div class="stock-row">
+    <span class="stock-name">${nombre}</span>
+    <div class="stock-bar">
+      <div class="stock-av" style="width:${pAv}%"></div>
+      <div class="stock-res" style="width:${pRes}%"></div>
+    </div>
+    <span class="stock-nums"><b>${av}</b> disponibles · <b class="r">${d.res}</b> reservados</span>
+  </div>`;
+}
+const srTotal = { total: 0, res: 0 };
+Object.entries(stockModelo).forEach(([m, d]) => { srTotal.total += d.total; srTotal.res += d.res; });
+document.getElementById("stockReal").innerHTML =
+  Object.entries(stockModelo).map(([m, d]) => stockRowHtml(m, d)).join("") +
+  `<div class="stock-row" style="border-top:2px solid var(--border);padding-top:10px;font-weight:700">
+    <span class="stock-name">TOTAL (${srTotal.total} unidades)</span>
+    <div class="stock-bar">
+      <div class="stock-av" style="width:${((srTotal.total - srTotal.res) / srTotal.total * 100).toFixed(1)}%"></div>
+      <div class="stock-res" style="width:${(srTotal.res / srTotal.total * 100).toFixed(1)}%"></div>
+    </div>
+    <span class="stock-nums" style="font-weight:800"><b>${srTotal.total - srTotal.res}</b> disponibles · <b class="r">${srTotal.res}</b> reservados</span>
+  </div>`;
 
 // ---------- Barras: unidades por almacén ----------
 const ALMACEN_COLOR = { "CONSIGNACION":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "LATIN":"#536dfe" };
