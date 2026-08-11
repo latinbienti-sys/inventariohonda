@@ -160,7 +160,7 @@
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 17:53 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 17:59 UTC</span></footer>
 </div>
 
 <script>
@@ -188,6 +188,7 @@ function shortModel(m){
 
 const modelos = {};
 unidades.forEach(u => {
+  if (u.alma !== "CONSIGNACION") return; // solo unidades en consignacion
   const sm = shortModel(u.modelo);
   if (!modelos[sm]) modelos[sm] = {};
   modelos[sm][u.color] = (modelos[sm][u.color] || 0) + 1;

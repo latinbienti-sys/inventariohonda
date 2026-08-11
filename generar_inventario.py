@@ -439,6 +439,7 @@ function shortModel(m){
 
 const modelos = {};
 unidades.forEach(u => {
+  if (u.alma !== "CONSIGNACION") return; // solo unidades en consignacion
   const sm = shortModel(u.modelo);
   if (!modelos[sm]) modelos[sm] = {};
   modelos[sm][u.color] = (modelos[sm][u.color] || 0) + 1;
