@@ -459,9 +459,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div class="bars" id="barsAlmacen"></div>
     </div>
     <div class="card">
-      <h3>Resumen por Modelo</h3>
+      <h3>Resumen y Valor por Modelo</h3>
       <table>
-        <thead><tr><th>Modelo</th><th>Unidades</th><th>Valor</th></tr></thead>
+        <thead><tr><th>Modelo</th><th>Unidades</th><th>Costo Unit.</th><th>Valor Total</th></tr></thead>
         <tbody id="tblResumen"></tbody>
       </table>
     </div>
@@ -607,7 +607,8 @@ function buildBars(id, data, colorMap){
 const porAlma = group(unidades.map(u => u.alma));
 buildBars("barsAlmacen", porAlma, ALMACEN_COLOR);
 
-// ---------- Tabla resumen por modelo ----------
+// ---------- Tabla resumen y valor por modelo ----------
+// Valor de inventario = cantidad disponible x costo unitario
 const porModelo = {};
 unidades.forEach(u => {
   const sm = shortModel(u.modelo);
@@ -615,10 +616,12 @@ unidades.forEach(u => {
   porModelo[sm].n += u.qty || 1;
   porModelo[sm].v += val(u);
 });
+const totN = unidades.reduce((s, u) => s + (u.qty || 1), 0);
+const totV = unidades.reduce((s, u) => s + val(u), 0);
 const tblResumen = document.getElementById("tblResumen");
 tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
-  `<tr><td>${m}</td><td><b>${d.n}</b></td><td>${fmt(d.v)}</td></tr>`
-).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.reduce((s,u)=>s+(u.qty||1),0)}</td><td>${fmt(unidades.reduce((s,u)=>s+val(u),0))}</td></tr>`;
+  `<tr><td>${m}</td><td><b>${d.n}</b></td><td>${fmt(d.n ? d.v / d.n : 0)}</td><td><b>${fmt(d.v)}</b></td></tr>`
+).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totN}</td><td>${fmt(totN ? totV / totN : 0)}</td><td>${fmt(totV)}</td></tr>`;
 
 // ---------- Tabla detalle ----------
 const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
