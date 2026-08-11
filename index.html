@@ -106,6 +106,31 @@
   .badge{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#fff; }
   .b-cons{ background:#1e9e5a; } .b-res{ background:#f59e0b; } .b-rep{ background:#e11d48; } .b-lat{ background:#536dfe; } .b-fne{ background:#536dfe; }
   footer{ text-align:center; margin-top:18px; font-size:12px; color:var(--muted); }
+
+  /* ---------- Pestañas ---------- */
+  .tabs{ display:flex; gap:8px; margin:18px 0 0; flex-wrap:wrap; }
+  .tab-btn{
+    background:#e8ecf6; border:none; color:var(--accent); font-weight:700; font-size:14px;
+    padding:10px 22px; border-radius:10px 10px 0 0; cursor:pointer; transition:background .2s, color .2s;
+  }
+  .tab-btn:hover{ background:#dbe3f2; }
+  .tab-btn.active{ background:var(--card); color:var(--honda-red); box-shadow:0 -3px 8px rgba(0,0,0,.05); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; animation:fadeIn .25s ease; }
+  @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:none;} }
+
+  /* ---------- Status Comercial ---------- */
+  .sc-alert{
+    background:#fff5f5; border:1px solid #fecaca; color:#b91c1c; border-radius:12px;
+    padding:14px 16px; margin-bottom:16px; font-size:13px; font-weight:600;
+  }
+  .sc-alert b{ color:var(--honda-red); }
+  .sc-table th{ background:var(--honda-blue); }
+  .qty-pill{ display:inline-block; min-width:34px; text-align:center; padding:3px 10px; border-radius:20px; font-weight:800; color:#fff; font-size:12px; }
+  .qty-red{ background:#e11d48; }
+  .qty-blue{ background:#1e9e5a; }
+  .st-ok{ color:#1e9e5a; font-weight:700; }
+  .st-nok{ color:#e11d48; font-weight:700; }
 </style>
 </head>
 <body>
@@ -117,6 +142,15 @@
       <div style="font-size:13px;opacity:.85;margin-top:4px;">Honda Mérida — LatinBienMotors, C.A.</div>
     </div>
   </header>
+
+  <!-- Pestañas -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tabInventario">Inventario</button>
+    <button class="tab-btn" data-tab="tabComercial">Status Comercial</button>
+  </div>
+
+  <!-- Panel: Inventario -->
+  <div class="tab-panel active" id="tabInventario">
 
   <!-- KPIs -->
   <div class="kpis">
@@ -169,7 +203,33 @@
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 21:34 UTC</span></footer>
+  </div><!-- /tabInventario -->
+
+  <!-- Panel: Status Comercial -->
+  <div class="tab-panel" id="tabComercial">
+    <div class="kpis">
+      <div class="kpi"><div class="v">2</div><div class="l">Presupuestos en borrador</div></div>
+      <div class="kpi green"><div class="v">3</div><div class="l">Unidades solicitadas</div></div>
+      <div class="kpi red"><div class="v">2</div><div class="l">Líneas sin stock</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Órdenes de venta en borrador (excluye DiPromuro)</h3>
+      <div id="scAlert"></div>
+      <div style="overflow-x:auto;">
+        <table class="sc-table">
+          <thead>
+            <tr>
+              <th>Orden</th><th>Cliente</th><th>Fecha</th><th>Modelo</th><th>Color</th><th>Referencia</th><th>Solicitado</th><th>Disponible</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tblComercial"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /tabComercial -->
+
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 21:51 UTC</span></footer>
 </div>
 
 <script>
@@ -324,6 +384,58 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td style="font-family:Consolas,monospace">${u.vin}</td>
     <td>${u.alma === "RESERVAS" || u.alma === "FNE" ? (u.contacto || "—") : "—"}</td>
   </tr>`).join("");
+
+// ================== PESTAÑAS ==================
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ================== STATUS COMERCIAL ==================
+const statusComercial = [{"id":4424,"orden":"Nuevo","cliente":"YADIRA COROMOTO ARIZA","fecha":"2026-08-10","modelo":"HONDA WR-V 1.5L A/T EXL 2026","color":"Plata Metalico","ref":"WR-VEXL26-NH-830M","qty":1.0,"disp":0.0,"ok":false},{"id":4427,"orden":"Nuevo","cliente":"TEST2","fecha":"2026-08-11","modelo":"HONDA HR-V 1.5L A/T EXL 2026","color":"Rojo Metalico","ref":"HR-VEXL26-R525P","qty":1.0,"disp":0.0,"ok":false},{"id":4427,"orden":"Nuevo","cliente":"TEST2","fecha":"2026-08-11","modelo":"HONDA HR-V 1.5L A/T EXL 2026","color":"Azul Cosmico","ref":"HR-VEXL26-B607M","qty":1.0,"disp":1.0,"ok":true}];
+
+function shortRef(ref){
+  return ref.replace(/^\[([^\]]+)\].*$/, "$1");
+}
+
+const sinStock = statusComercial.filter(r => !r.ok);
+
+const scAlert = document.getElementById("scAlert");
+if (sinStock.length) {
+  const resumen = {};
+  sinStock.forEach(r => {
+    const k = `${r.modelo} (${r.color})`;
+    resumen[k] = (resumen[k] || 0) + r.qty;
+  });
+  scAlert.innerHTML = `<div class="sc-alert">⚠️ <b>${sinStock.length}</b> línea(s) solicitadas <b>sin stock</b>: ${Object.entries(resumen).map(([k, q]) => `${k} × ${q}`).join(" · ")}</div>`;
+} else {
+  scAlert.innerHTML = `<div class="sc-alert" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">✔ Todas las líneas en presupuesto cuentan con stock disponible.</div>`;
+}
+
+const tblComercial = document.getElementById("tblComercial");
+tblComercial.innerHTML = statusComercial.map(r => {
+  const pill = r.ok
+    ? `<span class="qty-pill qty-blue">${r.qty}</span>`
+    : `<span class="qty-pill qty-red">${r.qty}</span>`;
+  const estado = r.ok
+    ? `<span class="st-ok">✔ Tenemos</span>`
+    : `<span class="st-nok">⚠ Previsión</span>`;
+  return `<tr>
+    <td><b>${r.orden}</b></td>
+    <td>${r.cliente}</td>
+    <td>${r.fecha}</td>
+    <td>${r.modelo}</td>
+    <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[r.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${r.color}</td>
+    <td style="font-family:Consolas,monospace">${shortRef(r.ref)}</td>
+    <td>${pill}</td>
+    <td>${r.disp}</td>
+    <td>${estado}</td>
+  </tr>`;
+}).join("") || `<tr><td colspan="9" style="text-align:center;color:var(--muted)">No hay presupuestos en borrador para vehículos.</td></tr>`;
 </script>
 </body>
 </html>

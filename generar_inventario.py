@@ -81,6 +81,13 @@ CURRENCY_SYMBOL = "$"
 CURRENCY_POSITION = "before"  # 'before' o 'after'
 CURRENCY_DECIMALS = 2
 
+# Datos compartidos para Status Comercial (se llenan en get_data)
+AVAILABLE_BY_PROD = {}   # product_id -> cantidad disponible (almacen PRINCIPAL)
+VARIANT_IDS = []         # ids de variantes vehiculo
+MODELO_BY_PROD = {}      # product_id -> display_name del template
+COLOR_BY_PROD = {}       # product_id -> color limpio
+REF_BY_PROD = {}         # product_id -> default_code / referencia interna
+
 
 def fmt_money(v):
     s = "{:,.{}f}".format(v, CURRENCY_DECIMALS)
@@ -139,7 +146,7 @@ def get_data():
     # 4) Variantes -> color (ptav), modelo y costo
     variants = call_kw("product.product", "search_read",
                        [[["id", "in", variant_ids]]],
-                       {"fields": ["product_template_attribute_value_ids", "standard_price"]})
+                       {"fields": ["product_template_attribute_value_ids", "standard_price", "default_code", "display_name"]})
 
     ptav_ids = []
     for v in variants:
@@ -179,6 +186,15 @@ def get_data():
                 color_by_prod[v["id"]] = color_by_ptav[p]
                 break
 
+    # Datos compartidos para Status Comercial
+    global VARIANT_IDS, MODELO_BY_PROD, COLOR_BY_PROD, REF_BY_PROD
+    VARIANT_IDS = variant_ids
+    MODELO_BY_PROD = dict(modelo_by_prod)
+    COLOR_BY_PROD = dict(color_by_prod)
+    REF_BY_PROD = {}
+    for v in variants:
+        REF_BY_PROD[v["id"]] = (v.get("default_code") or "").strip()
+
     # 5) Quants (con valoracion: costo por VIN)
     quants = call_kw("stock.quant", "search_read",
                      [[["product_id", "in", variant_ids]]],
@@ -191,6 +207,19 @@ def get_data():
                    {"fields": ["complete_name", "usage"]})
     loc_usage = {l["id"]: l["usage"] for l in locs}
     loc_name = {l["id"]: l["complete_name"] for l in locs}
+
+    # 6b) Disponibilidad vendible por variante: unidades libres en el almacen PRINCIPAL
+    global AVAILABLE_BY_PROD
+    AVAILABLE_BY_PROD = {}
+    for q in quants:
+        loc_id = q["location_id"][0]
+        if loc_usage.get(loc_id) != "internal":
+            continue
+        if warehouse_for(loc_name.get(loc_id, "")) != "PRINCIPAL":
+            continue
+        prod_id = q["product_id"][0]
+        disp = float(q["quantity"] or 0.0) - float(q["reserved_quantity"] or 0.0)
+        AVAILABLE_BY_PROD[prod_id] = AVAILABLE_BY_PROD.get(prod_id, 0.0) + max(disp, 0.0)
 
     # 7) Lotes (VIN)
     lot_ids = list({q["lot_id"][0] for q in quants if q.get("lot_id")})
@@ -283,7 +312,66 @@ def get_data():
     return units
 
 
-def build_html(units):
+def get_status_comercial():
+    """Ventas presupuesto (state=draft) para clientes != DiPromuro, cuyas lineas
+    sean vehiculos de nuestros modelos. Devuelve una lista de lineas con:
+      orden, cliente, fecha, modelo, color, ref, qty, disponible, ok (tenemos o no)
+    """
+    if not VARIANT_IDS:
+        return []
+
+    # Clientes a excluir: DiPromuro (por nombre, robusto)
+    dipro = call_kw("res.partner", "search_read",
+                    [[["name", "ilike", "dipromuro"]]],
+                    {"fields": ["id"], "limit": 20})
+    exclude_ids = [p["id"] for p in dipro]
+
+    # Ordenes de venta en borrador (presupuestos)
+    domain = [["state", "=", "draft"]]
+    if exclude_ids:
+        domain.append(["partner_id", "not in", exclude_ids])
+    orders = call_kw("sale.order", "search_read",
+                     [domain],
+                     {"fields": ["name", "partner_id", "date_order", "amount_total", "state"], "limit": 300})
+    if not orders:
+        return []
+
+    order_ids = [o["id"] for o in orders]
+    order_map = {o["id"]: o for o in orders}
+
+    # Lineas de pedido de esas ordenes (solo vehiculos de nuestros modelos)
+    lines = call_kw("sale.order.line", "search_read",
+                    [[["order_id", "in", order_ids], ["product_id", "in", VARIANT_IDS]]],
+                    {"fields": ["order_id", "product_id", "product_uom_qty", "qty_delivered",
+                                "price_unit", "state", "display_name"], "limit": 500})
+
+    out = []
+    for ln in lines:
+        o = order_map.get(ln.get("order_id", (0,))[0] if isinstance(ln.get("order_id"), (list, tuple)) else ln.get("order_id"), None)
+        if not o:
+            continue
+        pid = ln["product_id"][0] if isinstance(ln.get("product_id"), (list, tuple)) else ln.get("product_id")
+        qty = float(ln.get("product_uom_qty") or 0.0)
+        disp = AVAILABLE_BY_PROD.get(pid, 0.0)
+        out.append({
+            "id": o.get("id", 0),
+            "orden": o.get("name", ""),
+            "cliente": o.get("partner_id", ("", ""))[1] if o.get("partner_id") else "",
+            "fecha": str(o.get("date_order") or "")[:10],
+            "modelo": MODELO_BY_PROD.get(pid, ""),
+            "color": COLOR_BY_PROD.get(pid, ""),
+            "ref": REF_BY_PROD.get(pid, ""),
+            "qty": qty,
+            "disp": disp,
+            "ok": disp >= qty,
+        })
+
+    # Orden por: fecha, orden, modelo
+    out.sort(key=lambda r: (r["fecha"], r["orden"], r["modelo"]))
+    return out
+
+
+def build_html(units, status_comercial):
     total = len(units)
     por_alma = {}
     for u in units:
@@ -299,6 +387,13 @@ def build_html(units):
           "vin": u["vin"]} for u in units],
         ensure_ascii=False, separators=(",", ":")
     )
+
+    status_js = json.dumps(status_comercial, ensure_ascii=False, separators=(",", ":"))
+
+    # KPIs de Status Comercial
+    n_ordenes = len({r["id"] for r in status_comercial})
+    n_unidades = int(sum(r["qty"] for r in status_comercial))
+    n_sin_stock = sum(1 for r in status_comercial if not r["ok"])
 
     updated = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
 
@@ -316,6 +411,10 @@ def build_html(units):
     html = html.replace("__CURRENCY_POS__", CURRENCY_POSITION)
     html = html.replace("__CURRENCY_DEC__", str(CURRENCY_DECIMALS))
     html = html.replace("__UNIDADES__", unidades_js)
+    html = html.replace("__STATUS_COMERCIAL__", status_js)
+    html = html.replace("__SC_ORDENES__", str(n_ordenes))
+    html = html.replace("__SC_UNIDADES__", str(n_unidades))
+    html = html.replace("__SC_SIN_STOCK__", str(n_sin_stock))
     html = html.replace("__UPDATED__", updated)
     return html
 
@@ -462,6 +561,31 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .badge{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#fff; }
   .b-cons{ background:#1e9e5a; } .b-res{ background:#f59e0b; } .b-rep{ background:#e11d48; } .b-lat{ background:#536dfe; } .b-fne{ background:#536dfe; }
   footer{ text-align:center; margin-top:18px; font-size:12px; color:var(--muted); }
+
+  /* ---------- Pestañas ---------- */
+  .tabs{ display:flex; gap:8px; margin:18px 0 0; flex-wrap:wrap; }
+  .tab-btn{
+    background:#e8ecf6; border:none; color:var(--accent); font-weight:700; font-size:14px;
+    padding:10px 22px; border-radius:10px 10px 0 0; cursor:pointer; transition:background .2s, color .2s;
+  }
+  .tab-btn:hover{ background:#dbe3f2; }
+  .tab-btn.active{ background:var(--card); color:var(--honda-red); box-shadow:0 -3px 8px rgba(0,0,0,.05); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; animation:fadeIn .25s ease; }
+  @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:none;} }
+
+  /* ---------- Status Comercial ---------- */
+  .sc-alert{
+    background:#fff5f5; border:1px solid #fecaca; color:#b91c1c; border-radius:12px;
+    padding:14px 16px; margin-bottom:16px; font-size:13px; font-weight:600;
+  }
+  .sc-alert b{ color:var(--honda-red); }
+  .sc-table th{ background:var(--honda-blue); }
+  .qty-pill{ display:inline-block; min-width:34px; text-align:center; padding:3px 10px; border-radius:20px; font-weight:800; color:#fff; font-size:12px; }
+  .qty-red{ background:#e11d48; }
+  .qty-blue{ background:#1e9e5a; }
+  .st-ok{ color:#1e9e5a; font-weight:700; }
+  .st-nok{ color:#e11d48; font-weight:700; }
 </style>
 </head>
 <body>
@@ -473,6 +597,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div style="font-size:13px;opacity:.85;margin-top:4px;">Honda Mérida — LatinBienMotors, C.A.</div>
     </div>
   </header>
+
+  <!-- Pestañas -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tabInventario">Inventario</button>
+    <button class="tab-btn" data-tab="tabComercial">Status Comercial</button>
+  </div>
+
+  <!-- Panel: Inventario -->
+  <div class="tab-panel active" id="tabInventario">
 
   <!-- KPIs -->
   <div class="kpis">
@@ -524,6 +657,32 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <tbody id="tblDet"></tbody>
     </table>
   </div>
+
+  </div><!-- /tabInventario -->
+
+  <!-- Panel: Status Comercial -->
+  <div class="tab-panel" id="tabComercial">
+    <div class="kpis">
+      <div class="kpi"><div class="v">__SC_ORDENES__</div><div class="l">Presupuestos en borrador</div></div>
+      <div class="kpi green"><div class="v">__SC_UNIDADES__</div><div class="l">Unidades solicitadas</div></div>
+      <div class="kpi red"><div class="v">__SC_SIN_STOCK__</div><div class="l">Líneas sin stock</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Órdenes de venta en borrador (excluye DiPromuro)</h3>
+      <div id="scAlert"></div>
+      <div style="overflow-x:auto;">
+        <table class="sc-table">
+          <thead>
+            <tr>
+              <th>Orden</th><th>Cliente</th><th>Fecha</th><th>Modelo</th><th>Color</th><th>Referencia</th><th>Solicitado</th><th>Disponible</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tblComercial"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /tabComercial -->
 
   <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: __UPDATED__</span></footer>
 </div>
@@ -680,6 +839,58 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td style="font-family:Consolas,monospace">${u.vin}</td>
     <td>${u.alma === "RESERVAS" || u.alma === "FNE" ? (u.contacto || "—") : "—"}</td>
   </tr>`).join("");
+
+// ================== PESTAÑAS ==================
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ================== STATUS COMERCIAL ==================
+const statusComercial = __STATUS_COMERCIAL__;
+
+function shortRef(ref){
+  return ref.replace(/^\[([^\]]+)\].*$/, "$1");
+}
+
+const sinStock = statusComercial.filter(r => !r.ok);
+
+const scAlert = document.getElementById("scAlert");
+if (sinStock.length) {
+  const resumen = {};
+  sinStock.forEach(r => {
+    const k = `${r.modelo} (${r.color})`;
+    resumen[k] = (resumen[k] || 0) + r.qty;
+  });
+  scAlert.innerHTML = `<div class="sc-alert">⚠️ <b>${sinStock.length}</b> línea(s) solicitadas <b>sin stock</b>: ${Object.entries(resumen).map(([k, q]) => `${k} × ${q}`).join(" · ")}</div>`;
+} else {
+  scAlert.innerHTML = `<div class="sc-alert" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">✔ Todas las líneas en presupuesto cuentan con stock disponible.</div>`;
+}
+
+const tblComercial = document.getElementById("tblComercial");
+tblComercial.innerHTML = statusComercial.map(r => {
+  const pill = r.ok
+    ? `<span class="qty-pill qty-blue">${r.qty}</span>`
+    : `<span class="qty-pill qty-red">${r.qty}</span>`;
+  const estado = r.ok
+    ? `<span class="st-ok">✔ Tenemos</span>`
+    : `<span class="st-nok">⚠ Previsión</span>`;
+  return `<tr>
+    <td><b>${r.orden}</b></td>
+    <td>${r.cliente}</td>
+    <td>${r.fecha}</td>
+    <td>${r.modelo}</td>
+    <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[r.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${r.color}</td>
+    <td style="font-family:Consolas,monospace">${shortRef(r.ref)}</td>
+    <td>${pill}</td>
+    <td>${r.disp}</td>
+    <td>${estado}</td>
+  </tr>`;
+}).join("") || `<tr><td colspan="9" style="text-align:center;color:var(--muted)">No hay presupuestos en borrador para vehículos.</td></tr>`;
 </script>
 </body>
 </html>
@@ -694,7 +905,14 @@ def main():
         print(f"  {u['alma']:12s} | {u['modelo']:34s} | {u['color']:15s} | res={u['res']} | costo={fmt_money(u['costo'])} | {u['vin']}")
     print(f"VALOR TOTAL INVENTARIO: {fmt_money(sum(u['costo'] * u['qty'] for u in units))}")
 
-    html = build_html(units)
+    print("Consultando Status Comercial (ventas presupuesto)...")
+    status_comercial = get_status_comercial()
+    print(f"Lineas en presupuesto (excl. DiPromuro): {len(status_comercial)}")
+    for r in status_comercial:
+        marca = "TENEMOS" if r["ok"] else "NO TENEMOS"
+        print(f"  {r['fecha']} | {r['orden']:8s} | {r['cliente'][:22]:22s} | {r['modelo']:34s} | {r['color']:15s} | qty={r['qty']} | disp={r['disp']} | {marca}")
+
+    html = build_html(units, status_comercial)
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
     with open("Inventario_Carros_Honda.html", "w", encoding="utf-8") as f:
