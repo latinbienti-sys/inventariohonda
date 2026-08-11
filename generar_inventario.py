@@ -199,14 +199,22 @@ def get_data():
                    {"fields": ["name"]})
     lot_name = {l["id"]: (l["name"] or "").strip() for l in lots}
 
-    # 7b) Historial de reservas: contacto del movimiento CLBM/Stock => RLBM/Stock
+    # 7b) Historial de movimientos: contacto de reserva (CLBM/Stock => RLBM/Stock)
+    #     y facturado no entregado (CLBM/Stock => FNE/Stock o RLBM/Stock => FNE/Stock)
     contacto_by_lot = {}
     rlbm_locs = call_kw("stock.location", "search_read", [[["complete_name", "like", "RLBM%"]]], {"fields": ["id", "usage"]})
+    fne_locs = call_kw("stock.location", "search_read", [[["complete_name", "like", "FNE%"]]], {"fields": ["id", "usage"]})
+    clbm_locs = call_kw("stock.location", "search_read", [[["complete_name", "like", "CLBM%"]]], {"fields": ["id", "usage"]})
     rlbm_internal = [l["id"] for l in rlbm_locs if l["usage"] == "internal"]
-    if rlbm_internal:
+    fne_internal = [l["id"] for l in fne_locs if l["usage"] == "internal"]
+    clbm_internal = [l["id"] for l in clbm_locs if l["usage"] == "internal"]
+    dest_internal = rlbm_internal + fne_internal
+    src_internal = clbm_internal + rlbm_internal
+    if dest_internal:
         res_moves = call_kw("stock.move", "search_read",
                             [[["product_id", "in", variant_ids],
-                              ["location_dest_id", "in", rlbm_internal],
+                              ["location_dest_id", "in", dest_internal],
+                              ["location_id", "in", src_internal],
                               ["state", "=", "done"]]],
                             {"fields": ["lot_ids", "partner_id", "date"], "limit": 500})
         for mv in res_moves:
@@ -510,7 +518,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <thead>
         <tr>
           <th>#</th><th>Modelo</th><th>Color</th>
-          <th>Almacén</th><th>Valor</th><th>VIN</th><th>Reserva / Contacto</th>
+          <th>Almacén</th><th>Valor</th><th>VIN</th><th>Contacto</th>
         </tr>
       </thead>
       <tbody id="tblDet"></tbody>
@@ -670,7 +678,7 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
     <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
-    <td>${u.alma === "RESERVAS" ? (u.contacto || "—") : "—"}</td>
+    <td>${u.alma === "RESERVAS" || u.alma === "FNE" ? (u.contacto || "—") : "—"}</td>
   </tr>`).join("");
 </script>
 </body>
