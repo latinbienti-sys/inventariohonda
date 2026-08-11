@@ -66,7 +66,7 @@ def clean_color(name):
     return strip_accents(name).strip()
 
 
-WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION", "FNE": "FACTURADO"}
+WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION", "FNE": "FNE"}
 
 # Costo unitario por modelo (se aplica a TODAS las unidades del modelo).
 # Definido por el usuario: no se modifica nada en Odoo.
@@ -199,6 +199,31 @@ def get_data():
                    {"fields": ["name"]})
     lot_name = {l["id"]: (l["name"] or "").strip() for l in lots}
 
+    # 7b) Historial de reservas: contacto del movimiento CLBM/Stock => RLBM/Stock
+    contacto_by_lot = {}
+    rlbm_locs = call_kw("stock.location", "search_read", [[["complete_name", "like", "RLBM%"]]], {"fields": ["id", "usage"]})
+    rlbm_internal = [l["id"] for l in rlbm_locs if l["usage"] == "internal"]
+    if rlbm_internal:
+        res_moves = call_kw("stock.move", "search_read",
+                            [[["product_id", "in", variant_ids],
+                              ["location_dest_id", "in", rlbm_internal],
+                              ["state", "=", "done"]]],
+                            {"fields": ["lot_ids", "partner_id", "date"], "limit": 500})
+        for mv in res_moves:
+            if not mv.get("partner_id"):
+                continue
+            nombre = mv["partner_id"][1] if isinstance(mv.get("partner_id"), (list, tuple)) else str(mv.get("partner_id"))
+            fecha = str(mv.get("date") or "")
+            lots_mv = mv.get("lot_ids")
+            if lots_mv and not isinstance(lots_mv, list):
+                lots_mv = [lots_mv]
+            if not isinstance(lots_mv, list):
+                continue
+            for x in lots_mv:
+                lid = x[0] if isinstance(x, (list, tuple)) else x
+                if lid not in contacto_by_lot or fecha > contacto_by_lot[lid][0]:
+                    contacto_by_lot[lid] = (fecha, nombre)
+
     # 8) Consolidar solo ubicaciones internas con cantidad > 0
     agg = {}
     for q in quants:
@@ -241,6 +266,7 @@ def get_data():
             "qty": int(e["qty"]),
             "res": 1 if e["res"] > 0 else 0,
             "costo": costo,
+            "contacto": (contacto_by_lot.get(lot_id, ("", ""))[1]) if lot_id else "",
             "vin": vin,
         })
 
@@ -261,7 +287,8 @@ def build_html(units):
     unidades_js = json.dumps(
         [{"modelo": u["modelo"], "cat": u["cat"], "color": u["color"],
           "alma": u["alma"], "res": bool(u["res"]), "qty": u["qty"],
-          "costo": round(u["costo"], 2), "vin": u["vin"]} for u in units],
+          "costo": round(u["costo"], 2), "contacto": u.get("contacto", ""),
+          "vin": u["vin"]} for u in units],
         ensure_ascii=False, separators=(",", ":")
     )
 
@@ -272,7 +299,7 @@ def build_html(units):
     html = html.replace("__KPI_CONS__", str(por_alma.get("PRINCIPAL", 0)))
     html = html.replace("__KPI_RES__", str(por_alma.get("RESERVAS", 0)))
     html = html.replace("__KPI_REP__", str(por_alma.get("REPARACION", 0)))
-    html = html.replace("__KPI_FNE__", str(por_alma.get("FACTURADO", 0)))
+    html = html.replace("__KPI_FNE__", str(por_alma.get("FNE", 0)))
     html = html.replace("__KPI_VALOR__", fmt_money(valor()))
     html = html.replace("__VALOR_PRIN__", fmt_money(valor("PRINCIPAL")))
     html = html.replace("__VALOR_RES__", fmt_money(valor("RESERVAS")))
@@ -307,14 +334,14 @@ def write_csv(units):
     with open("Inventario_Carros_Honda_Resumen.csv", "w", encoding="utf-8", newline="") as f:
         f.write(buf.getvalue())
 
-    # Detalle: Modelo;Categoria;Color;Almacen;Cantidad;Reservada;Vin;Costo;Valor
+    # Detalle: Modelo;Categoria;Color;Almacen;Cantidad;Reservada;Vin;Costo;Valor;Contacto
     buf = io.StringIO()
     buf.write("\ufeff")
     w = csv.writer(buf, delimiter=";", lineterminator="\r\n")
-    w.writerow(["Modelo", "Categoria", "Color", "Almacen", "Cantidad", "Reservada", "Vin", "Costo", "Valor"])
+    w.writerow(["Modelo", "Categoria", "Color", "Almacen", "Cantidad", "Reservada", "Vin", "Costo", "Valor", "Contacto"])
     for u in units:
         w.writerow([u["modelo"], u["cat"], u["color"], u["alma"], u["qty"], u["res"],
-                    u["vin"], round(u["costo"], 2), round(u["costo"] * u["qty"], 2)])
+                    u["vin"], round(u["costo"], 2), round(u["costo"] * u["qty"], 2), u.get("contacto", "")])
     with open("Inventario_Carros_Honda_Detalle.csv", "w", encoding="utf-8", newline="") as f:
         f.write(buf.getvalue())
 
@@ -451,7 +478,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   <!-- Stock Real por Modelo -->
   <div class="card" style="margin-bottom:16px;">
-    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación <span class="dot d-fne"></span>Facturado</span></h3>
+    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación</span></h3>
     <div id="stockReal"></div>
   </div>
 
@@ -483,7 +510,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <thead>
         <tr>
           <th>#</th><th>Modelo</th><th>Color</th>
-          <th>Almacén</th><th>Valor</th><th>VIN</th>
+          <th>Almacén</th><th>Valor</th><th>VIN</th><th>Reserva / Contacto</th>
         </tr>
       </thead>
       <tbody id="tblDet"></tbody>
@@ -551,19 +578,19 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
           </div>`;
 }).join("");
 
-// ---------- Stock Real por Modelo (disponible vs reservado vs reparacion vs facturado) ----------
-// Disponible = almacen PRINCIPAL | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION | Facturado = almacen FACTURADO
+// ---------- Stock Real por Modelo (disponible vs reservado vs reparacion) ----------
+// Excluye unidades facturadas (FNE). Disponible = PRINCIPAL | Reservado = RESERVAS | En reparacion = REPARACION
 const stockModelo = {};
 unidades.forEach(u => {
+  if (u.alma === "FNE") return; // facturado no entregado se excluye del Stock Real
   const sm = shortModel(u.modelo);
-  if (!stockModelo[sm]) stockModelo[sm] = { av: 0, res: 0, rep: 0, fne: 0 };
+  if (!stockModelo[sm]) stockModelo[sm] = { av: 0, res: 0, rep: 0 };
   if (u.alma === "RESERVAS") stockModelo[sm].res++;
   else if (u.alma === "REPARACION") stockModelo[sm].rep++;
-  else if (u.alma === "FACTURADO") stockModelo[sm].fne++;
   else stockModelo[sm].av++;
 });
 function stockRowHtml(nombre, d) {
-  const total = d.av + d.res + d.rep + d.fne;
+  const total = d.av + d.res + d.rep;
   const p = v => total ? (v / total * 100).toFixed(1) : 0;
   return `<div class="stock-row">
     <span class="stock-name">${nombre}</span>
@@ -571,14 +598,13 @@ function stockRowHtml(nombre, d) {
       <div class="stock-av" style="width:${p(d.av)}%"></div>
       <div class="stock-res" style="width:${p(d.res)}%"></div>
       <div class="stock-rep" style="width:${p(d.rep)}%"></div>
-      <div class="stock-fne" style="width:${p(d.fne)}%"></div>
     </div>
-    <span class="stock-nums"><b>${d.av}</b> disp · <b class="r">${d.res}</b> res${d.rep ? ` · <b class="p">${d.rep}</b> rep` : ""}${d.fne ? ` · <b class="f">${d.fne}</b> fact` : ""}</span>
+    <span class="stock-nums"><b>${d.av}</b> disp · <b class="r">${d.res}</b> res${d.rep ? ` · <b class="p">${d.rep}</b> rep` : ""}</span>
   </div>`;
 }
-const srTotal = { av: 0, res: 0, rep: 0, fne: 0 };
-Object.entries(stockModelo).forEach(([m, d]) => { srTotal.av += d.av; srTotal.res += d.res; srTotal.rep += d.rep; srTotal.fne += d.fne; });
-const srT = srTotal.av + srTotal.res + srTotal.rep + srTotal.fne;
+const srTotal = { av: 0, res: 0, rep: 0 };
+Object.entries(stockModelo).forEach(([m, d]) => { srTotal.av += d.av; srTotal.res += d.res; srTotal.rep += d.rep; });
+const srT = srTotal.av + srTotal.res + srTotal.rep;
 document.getElementById("stockReal").innerHTML =
   Object.entries(stockModelo).map(([m, d]) => stockRowHtml(m, d)).join("") +
   `<div class="stock-row" style="border-top:2px solid var(--border);padding-top:10px;font-weight:700">
@@ -587,13 +613,12 @@ document.getElementById("stockReal").innerHTML =
       <div class="stock-av" style="width:${(srTotal.av / srT * 100).toFixed(1)}%"></div>
       <div class="stock-res" style="width:${(srTotal.res / srT * 100).toFixed(1)}%"></div>
       <div class="stock-rep" style="width:${(srTotal.rep / srT * 100).toFixed(1)}%"></div>
-      <div class="stock-fne" style="width:${(srTotal.fne / srT * 100).toFixed(1)}%"></div>
     </div>
-    <span class="stock-nums" style="font-weight:800"><b>${srTotal.av}</b> disponibles · <b class="r">${srTotal.res}</b> reservados · <b class="p">${srTotal.rep}</b> en reparación${srTotal.fne ? ` · <b class="f">${srTotal.fne}</b> facturados` : ""}</span>
+    <span class="stock-nums" style="font-weight:800"><b>${srTotal.av}</b> disponibles · <b class="r">${srTotal.res}</b> reservados · <b class="p">${srTotal.rep}</b> en reparación</span>
   </div>`;
 
 // ---------- Barras: unidades por almacén ----------
-const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "FACTURADO":"#536dfe", "LATIN":"#536dfe" };
+const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "FNE":"#536dfe", "LATIN":"#536dfe" };
 function buildBars(id, data, colorMap){
   const max = Math.max(...Object.values(data), 1);
   const el = document.getElementById(id);
@@ -634,7 +659,7 @@ tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
 ).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totN}</td><td>—</td><td>${fmt(totV)}</td></tr>`;
 
 // ---------- Tabla detalle ----------
-const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : a === "FACTURADO" ? "b-fne" : "b-lat";
+const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : a === "FNE" ? "b-fne" : "b-lat";
 
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
@@ -645,6 +670,7 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
     <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
+    <td>${u.alma === "RESERVAS" ? (u.contacto || "—") : "—"}</td>
   </tr>`).join("");
 </script>
 </body>

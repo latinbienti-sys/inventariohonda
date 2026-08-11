@@ -130,7 +130,7 @@
 
   <!-- Stock Real por Modelo -->
   <div class="card" style="margin-bottom:16px;">
-    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación <span class="dot d-fne"></span>Facturado</span></h3>
+    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación</span></h3>
     <div id="stockReal"></div>
   </div>
 
@@ -162,21 +162,21 @@
       <thead>
         <tr>
           <th>#</th><th>Modelo</th><th>Color</th>
-          <th>Almacén</th><th>Valor</th><th>VIN</th>
+          <th>Almacén</th><th>Valor</th><th>VIN</th><th>Reserva / Contacto</th>
         </tr>
       </thead>
       <tbody id="tblDet"></tbody>
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 20:38 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 20:44 UTC</span></footer>
 </div>
 
 <script>
 "use strict";
 
 // ================== DATOS ==================
-const unidades = [{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Plata Metalico","alma":"FACTURADO","res":false,"qty":1,"costo":34158.32,"vin":"93HGN2670TK600306"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"FACTURADO","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503968"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FACTURADO","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK502944"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":34158.32,"vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"PRINCIPAL","res":true,"qty":1,"costo":34158.32,"vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":43358.28,"vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":43358.28,"vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"qty":1,"costo":43358.28,"vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"qty":1,"costo":38937.52,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":34158.32,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":43358.28,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"qty":1,"costo":38937.52,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"RESERVAS","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503972"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503056"}];
+const unidades = [{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":34158.32,"contacto":"","vin":"93HGN2670TK600306"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"FNE","res":false,"qty":1,"costo":38937.52,"contacto":"","vin":"93HDG5840TK503968"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":38937.52,"contacto":"YADIRA COROMOTO ARIZA","vin":"93HDG5840TK502944"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":34158.32,"contacto":"","vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"PRINCIPAL","res":true,"qty":1,"costo":34158.32,"contacto":"","vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":43358.28,"contacto":"","vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":43358.28,"contacto":"","vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"qty":1,"costo":43358.28,"contacto":"","vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"contacto":"","vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"contacto":"","vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"contacto":"STEFANO CADAMURO","vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"qty":1,"costo":38937.52,"contacto":"LATINBIENMOTORS C.A","vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":34158.32,"contacto":"MARLY CECILIA VIELMA DE PAREDES","vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":43358.28,"contacto":"JESUS ALFONSO UGUETO LEAL","vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"qty":1,"costo":38937.52,"contacto":"MARIA SOLEDAD GONZALEZ REYES","vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"RESERVAS","res":false,"qty":1,"costo":38937.52,"contacto":"ALBA SALAS","vin":"93HDG5840TK503972"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":38937.52,"contacto":"STEFANO CADAMURO","vin":"93HDG5840TK503056"}];
 
 const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
 
@@ -230,19 +230,19 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
           </div>`;
 }).join("");
 
-// ---------- Stock Real por Modelo (disponible vs reservado vs reparacion vs facturado) ----------
-// Disponible = almacen PRINCIPAL | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION | Facturado = almacen FACTURADO
+// ---------- Stock Real por Modelo (disponible vs reservado vs reparacion) ----------
+// Excluye unidades facturadas (FNE). Disponible = PRINCIPAL | Reservado = RESERVAS | En reparacion = REPARACION
 const stockModelo = {};
 unidades.forEach(u => {
+  if (u.alma === "FNE") return; // facturado no entregado se excluye del Stock Real
   const sm = shortModel(u.modelo);
-  if (!stockModelo[sm]) stockModelo[sm] = { av: 0, res: 0, rep: 0, fne: 0 };
+  if (!stockModelo[sm]) stockModelo[sm] = { av: 0, res: 0, rep: 0 };
   if (u.alma === "RESERVAS") stockModelo[sm].res++;
   else if (u.alma === "REPARACION") stockModelo[sm].rep++;
-  else if (u.alma === "FACTURADO") stockModelo[sm].fne++;
   else stockModelo[sm].av++;
 });
 function stockRowHtml(nombre, d) {
-  const total = d.av + d.res + d.rep + d.fne;
+  const total = d.av + d.res + d.rep;
   const p = v => total ? (v / total * 100).toFixed(1) : 0;
   return `<div class="stock-row">
     <span class="stock-name">${nombre}</span>
@@ -250,14 +250,13 @@ function stockRowHtml(nombre, d) {
       <div class="stock-av" style="width:${p(d.av)}%"></div>
       <div class="stock-res" style="width:${p(d.res)}%"></div>
       <div class="stock-rep" style="width:${p(d.rep)}%"></div>
-      <div class="stock-fne" style="width:${p(d.fne)}%"></div>
     </div>
-    <span class="stock-nums"><b>${d.av}</b> disp · <b class="r">${d.res}</b> res${d.rep ? ` · <b class="p">${d.rep}</b> rep` : ""}${d.fne ? ` · <b class="f">${d.fne}</b> fact` : ""}</span>
+    <span class="stock-nums"><b>${d.av}</b> disp · <b class="r">${d.res}</b> res${d.rep ? ` · <b class="p">${d.rep}</b> rep` : ""}</span>
   </div>`;
 }
-const srTotal = { av: 0, res: 0, rep: 0, fne: 0 };
-Object.entries(stockModelo).forEach(([m, d]) => { srTotal.av += d.av; srTotal.res += d.res; srTotal.rep += d.rep; srTotal.fne += d.fne; });
-const srT = srTotal.av + srTotal.res + srTotal.rep + srTotal.fne;
+const srTotal = { av: 0, res: 0, rep: 0 };
+Object.entries(stockModelo).forEach(([m, d]) => { srTotal.av += d.av; srTotal.res += d.res; srTotal.rep += d.rep; });
+const srT = srTotal.av + srTotal.res + srTotal.rep;
 document.getElementById("stockReal").innerHTML =
   Object.entries(stockModelo).map(([m, d]) => stockRowHtml(m, d)).join("") +
   `<div class="stock-row" style="border-top:2px solid var(--border);padding-top:10px;font-weight:700">
@@ -266,13 +265,12 @@ document.getElementById("stockReal").innerHTML =
       <div class="stock-av" style="width:${(srTotal.av / srT * 100).toFixed(1)}%"></div>
       <div class="stock-res" style="width:${(srTotal.res / srT * 100).toFixed(1)}%"></div>
       <div class="stock-rep" style="width:${(srTotal.rep / srT * 100).toFixed(1)}%"></div>
-      <div class="stock-fne" style="width:${(srTotal.fne / srT * 100).toFixed(1)}%"></div>
     </div>
-    <span class="stock-nums" style="font-weight:800"><b>${srTotal.av}</b> disponibles · <b class="r">${srTotal.res}</b> reservados · <b class="p">${srTotal.rep}</b> en reparación${srTotal.fne ? ` · <b class="f">${srTotal.fne}</b> facturados` : ""}</span>
+    <span class="stock-nums" style="font-weight:800"><b>${srTotal.av}</b> disponibles · <b class="r">${srTotal.res}</b> reservados · <b class="p">${srTotal.rep}</b> en reparación</span>
   </div>`;
 
 // ---------- Barras: unidades por almacén ----------
-const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "FACTURADO":"#536dfe", "LATIN":"#536dfe" };
+const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "FNE":"#536dfe", "LATIN":"#536dfe" };
 function buildBars(id, data, colorMap){
   const max = Math.max(...Object.values(data), 1);
   const el = document.getElementById(id);
@@ -313,7 +311,7 @@ tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
 ).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totN}</td><td>—</td><td>${fmt(totV)}</td></tr>`;
 
 // ---------- Tabla detalle ----------
-const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : a === "FACTURADO" ? "b-fne" : "b-lat";
+const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : a === "FNE" ? "b-fne" : "b-lat";
 
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
@@ -324,6 +322,7 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
     <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
+    <td>${u.alma === "RESERVAS" ? (u.contacto || "—") : "—"}</td>
   </tr>`).join("");
 </script>
 </body>
