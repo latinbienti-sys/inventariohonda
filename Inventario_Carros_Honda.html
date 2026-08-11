@@ -124,15 +124,6 @@
     <div class="kpi gold"><div class="v cur">$ 587,408.24</div><div class="l">Valor total del inventario</div></div>
   </div>
 
-  <!-- Valor por almacén -->
-  <div class="card" style="margin-bottom:16px;">
-    <h3>Valor del Inventario por Almacén</h3>
-    <table>
-      <thead><tr><th>Almacén</th><th>Unidades</th><th>Valor</th></tr></thead>
-      <tbody id="tblValorAlma"></tbody>
-    </table>
-  </div>
-
   <!-- Stock Real por Modelo -->
   <div class="card" style="margin-bottom:16px;">
     <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación</span></h3>
@@ -174,7 +165,7 @@
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 19:08 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 19:10 UTC</span></footer>
 </div>
 
 <script>
@@ -318,18 +309,6 @@ tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
 
 // ---------- Tabla detalle ----------
 const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
-
-// ---------- Valor por almacén ----------
-const porValorAlma = {};
-unidades.forEach(u => {
-  if (!porValorAlma[u.alma]) porValorAlma[u.alma] = { n: 0, v: 0 };
-  porValorAlma[u.alma].n += u.qty || 1;
-  porValorAlma[u.alma].v += val(u);
-});
-const tblValorAlma = document.getElementById("tblValorAlma");
-tblValorAlma.innerHTML = Object.entries(porValorAlma).map(([a, d]) =>
-  `<tr><td><span class="badge ${bdg(a)}">${a}</span></td><td>${d.n}</td><td><b>${fmt(d.v)}</b></td></tr>`
-).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.reduce((s,u)=>s+(u.qty||1),0)}</td><td>${fmt(unidades.reduce((s,u)=>s+val(u),0))}</td></tr>`;
 
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
