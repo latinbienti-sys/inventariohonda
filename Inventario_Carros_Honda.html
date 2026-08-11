@@ -158,14 +158,14 @@
       <thead>
         <tr>
           <th>#</th><th>Modelo</th><th>Color</th>
-          <th>Almacén</th><th>Costo</th><th>Valor</th><th>VIN</th>
+          <th>Almacén</th><th>Valor</th><th>VIN</th>
         </tr>
       </thead>
       <tbody id="tblDet"></tbody>
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 19:10 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 19:12 UTC</span></footer>
 </div>
 
 <script>
@@ -305,7 +305,7 @@ const totV = unidades.reduce((s, u) => s + val(u), 0);
 const tblResumen = document.getElementById("tblResumen");
 tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
   `<tr><td>${m}</td><td><b>${d.n}</b></td><td>${fmt(d.n ? d.v / d.n : 0)}</td><td><b>${fmt(d.v)}</b></td></tr>`
-).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totN}</td><td>${fmt(totN ? totV / totN : 0)}</td><td>${fmt(totV)}</td></tr>`;
+).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totN}</td><td>—</td><td>${fmt(totV)}</td></tr>`;
 
 // ---------- Tabla detalle ----------
 const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
@@ -317,7 +317,6 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td>${u.modelo}</td>
     <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[u.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${u.color}</td>
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
-    <td>${fmt(u.costo)}</td>
     <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
   </tr>`).join("");
