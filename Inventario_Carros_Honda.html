@@ -36,6 +36,8 @@
   .kpi.green{ border-top-color:#1e9e5a;} .kpi.green .v{ color:#1e9e5a;}
   .kpi.yellow{ border-top-color:#f59e0b;} .kpi.yellow .v{ color:#b45309;}
   .kpi.red{ border-top-color:var(--honda-red);} .kpi.red .v{ color:var(--honda-red);}
+  .kpi.gold{ border-top-color:#b45309;} .kpi.gold .v{ color:#b45309; font-size:26px; white-space:nowrap; }
+  .kpi .v.cur{ font-size:26px; white-space:nowrap; }
 
   .grid{ display:grid; gap:16px; margin-bottom:16px; }
   .grid.cols-2{ grid-template-columns:1fr 1fr; }
@@ -119,6 +121,16 @@
     <div class="kpi green"><div class="v">8</div><div class="l">Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v">6</div><div class="l">Almacén Reservas</div></div>
     <div class="kpi red"><div class="v">1</div><div class="l">Almacén Reparación</div></div>
+    <div class="kpi gold"><div class="v cur">$ 194,329.16</div><div class="l">Valor total del inventario</div></div>
+  </div>
+
+  <!-- Valor por almacén -->
+  <div class="card" style="margin-bottom:16px;">
+    <h3>Valor del Inventario por Almacén</h3>
+    <table>
+      <thead><tr><th>Almacén</th><th>Unidades</th><th>Valor</th></tr></thead>
+      <tbody id="tblValorAlma"></tbody>
+    </table>
   </div>
 
   <!-- Stock Real por Modelo -->
@@ -142,7 +154,7 @@
     <div class="card">
       <h3>Resumen por Modelo</h3>
       <table>
-        <thead><tr><th>Modelo</th><th>Unidades</th></tr></thead>
+        <thead><tr><th>Modelo</th><th>Unidades</th><th>Valor</th></tr></thead>
         <tbody id="tblResumen"></tbody>
       </table>
     </div>
@@ -155,23 +167,33 @@
       <thead>
         <tr>
           <th>#</th><th>Modelo</th><th>Color</th>
-          <th>Almacén</th><th>VIN</th>
+          <th>Almacén</th><th>Costo</th><th>Valor</th><th>VIN</th>
         </tr>
       </thead>
       <tbody id="tblDet"></tbody>
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 18:43 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 18:53 UTC</span></footer>
 </div>
 
 <script>
 "use strict";
 
 // ================== DATOS ==================
-const unidades = [{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"PRINCIPAL","res":true,"vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"PRINCIPAL","res":false,"vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"RESERVAS","res":false,"vin":"93HDG5840TK503972"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"vin":"93HDG5840TK503056"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"vin":"93HDG5840TK502944"}];
+const unidades = [{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":34158.32,"vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"PRINCIPAL","res":true,"qty":1,"costo":0.0,"vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":43358.28,"vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":0.0,"vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"qty":1,"costo":0.0,"vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":38937.52,"vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"PRINCIPAL","res":false,"qty":1,"costo":0.0,"vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"qty":1,"costo":38937.52,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":0.0,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":0.0,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"qty":1,"costo":0.0,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"RESERVAS","res":false,"qty":1,"costo":0.0,"vin":"93HDG5840TK503972"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":0.0,"vin":"93HDG5840TK503056"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":0.0,"vin":"93HDG5840TK502944"}];
 
 const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
+
+// ---------- Moneda / formato ----------
+const CURRENCY = "$";
+const CURRENCY_POS = "before";
+const CURRENCY_DEC = 2;
+const fmt = n => {
+  const s = Number(n).toLocaleString("en-US", {minimumFractionDigits:CURRENCY_DEC, maximumFractionDigits:CURRENCY_DEC});
+  return CURRENCY_POS === "before" ? CURRENCY + " " + s : s + " " + CURRENCY;
+};
+const val = u => (Number(u.costo) || 0) * (u.qty || 1);
 
 const COLOR_HEX = {
   "Azul Cosmico":   "#0ea5e9",
@@ -279,14 +301,33 @@ const porAlma = group(unidades.map(u => u.alma));
 buildBars("barsAlmacen", porAlma, ALMACEN_COLOR);
 
 // ---------- Tabla resumen por modelo ----------
-const porModelo = group(unidades.map(u => shortModel(u.modelo)));
+const porModelo = {};
+unidades.forEach(u => {
+  const sm = shortModel(u.modelo);
+  if (!porModelo[sm]) porModelo[sm] = { n: 0, v: 0 };
+  porModelo[sm].n += u.qty || 1;
+  porModelo[sm].v += val(u);
+});
 const tblResumen = document.getElementById("tblResumen");
-tblResumen.innerHTML = Object.entries(porModelo).map(([m, n]) =>
-  `<tr><td>${m}</td><td><b>${n}</b></td></tr>`
-).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.length}</td></tr>`;
+tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
+  `<tr><td>${m}</td><td><b>${d.n}</b></td><td>${fmt(d.v)}</td></tr>`
+).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.reduce((s,u)=>s+(u.qty||1),0)}</td><td>${fmt(unidades.reduce((s,u)=>s+val(u),0))}</td></tr>`;
 
 // ---------- Tabla detalle ----------
 const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
+
+// ---------- Valor por almacén ----------
+const porValorAlma = {};
+unidades.forEach(u => {
+  if (!porValorAlma[u.alma]) porValorAlma[u.alma] = { n: 0, v: 0 };
+  porValorAlma[u.alma].n += u.qty || 1;
+  porValorAlma[u.alma].v += val(u);
+});
+const tblValorAlma = document.getElementById("tblValorAlma");
+tblValorAlma.innerHTML = Object.entries(porValorAlma).map(([a, d]) =>
+  `<tr><td><span class="badge ${bdg(a)}">${a}</span></td><td>${d.n}</td><td><b>${fmt(d.v)}</b></td></tr>`
+).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.reduce((s,u)=>s+(u.qty||1),0)}</td><td>${fmt(unidades.reduce((s,u)=>s+val(u),0))}</td></tr>`;
+
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
   <tr>
@@ -294,6 +335,8 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td>${u.modelo}</td>
     <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[u.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${u.color}</td>
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
+    <td>${fmt(u.costo)}</td>
+    <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
   </tr>`).join("");
 </script>

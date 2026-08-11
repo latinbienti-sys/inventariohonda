@@ -68,6 +68,17 @@ def clean_color(name):
 
 WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION"}
 
+CURRENCY_SYMBOL = "$"
+CURRENCY_POSITION = "before"  # 'before' o 'after'
+CURRENCY_DECIMALS = 2
+
+
+def fmt_money(v):
+    s = "{:,.{}f}".format(v, CURRENCY_DECIMALS)
+    if CURRENCY_POSITION == "before":
+        return "{} {}".format(CURRENCY_SYMBOL, s)
+    return "{} {}".format(s, CURRENCY_SYMBOL)
+
 
 def warehouse_for(loc_name):
     prefix = loc_name.split("/")[0].strip().upper()
@@ -83,6 +94,19 @@ def get_data():
     if not r.get("uid"):
         raise RuntimeError("Fallo de autenticacion en Odoo")
 
+    # Moneda de la empresa para mostrar costos
+    global CURRENCY_SYMBOL, CURRENCY_POSITION, CURRENCY_DECIMALS
+    companies = call_kw("res.company", "search_read", [[]], {"fields": ["currency_id"], "limit": 1})
+    if companies and companies[0].get("currency_id"):
+        currs = call_kw("res.currency", "search_read",
+                        [[["id", "=", companies[0]["currency_id"][0]]]],
+                        {"fields": ["symbol", "position", "decimal_places"]})
+        if currs:
+            c = currs[0]
+            CURRENCY_SYMBOL = c.get("symbol") or "$"
+            CURRENCY_POSITION = c.get("position") or "after"
+            CURRENCY_DECIMALS = int(c.get("decimal_places") or 2)
+
     # 2) Atributo "Color"
     attrs = call_kw("product.attribute", "search_read", [[]], {"fields": ["name"], "limit": 200})
     color_attr_id = None
@@ -96,22 +120,32 @@ def get_data():
     # 3) Templates de vehiculos con color
     templates = call_kw("product.template", "search_read",
                         [[["attribute_line_ids.attribute_id", "=", color_attr_id]]],
-                        {"fields": ["display_name", "categ_id", "product_variant_ids"], "limit": 200})
+                        {"fields": ["display_name", "categ_id", "product_variant_ids", "standard_price"], "limit": 200})
 
     variant_ids = []
     for t in templates:
         variant_ids += t["product_variant_ids"]
     variant_ids = list(dict.fromkeys(variant_ids))
 
-    # 4) Variantes -> color (ptav) y modelo
+    # 4) Variantes -> color (ptav), modelo y costo
     variants = call_kw("product.product", "search_read",
                        [[["id", "in", variant_ids]]],
-                       {"fields": ["product_template_attribute_value_ids"]})
+                       {"fields": ["product_template_attribute_value_ids", "standard_price"]})
 
     ptav_ids = []
     for v in variants:
         ptav_ids += v["product_template_attribute_value_ids"]
     ptav_ids = list(dict.fromkeys(ptav_ids))
+
+    costo_by_prod = {}
+    for v in variants:
+        costo_by_prod[v["id"]] = float(v.get("standard_price") or 0.0)
+    # Si la variante no tiene costo propio, tomar el del template
+    for t in templates:
+        costo_tpl = float(t.get("standard_price") or 0.0)
+        for vid in t["product_variant_ids"]:
+            if costo_by_prod.get(vid, 0.0) == 0.0 and costo_tpl > 0.0:
+                costo_by_prod[vid] = costo_tpl
 
     color_by_ptav = {}
     if ptav_ids:
@@ -136,10 +170,10 @@ def get_data():
                 color_by_prod[v["id"]] = color_by_ptav[p]
                 break
 
-    # 5) Quants
+    # 5) Quants (con valoracion: costo por VIN)
     quants = call_kw("stock.quant", "search_read",
                      [[["product_id", "in", variant_ids]]],
-                     {"fields": ["product_id", "location_id", "quantity", "reserved_quantity", "lot_id"]})
+                     {"fields": ["product_id", "location_id", "quantity", "reserved_quantity", "lot_id", "value"]})
 
     # 6) Ubicaciones
     loc_ids = list({q["location_id"][0] for q in quants})
@@ -169,10 +203,11 @@ def get_data():
         lot_id = q["lot_id"][0] if q.get("lot_id") else None
         key = (prod_id, lot_id)
         e = agg.setdefault(key, {
-            "prod": prod_id, "lot": lot_id, "qty": 0.0, "res": 0.0, "loc": loc_id
+            "prod": prod_id, "lot": lot_id, "qty": 0.0, "res": 0.0, "loc": loc_id, "valor": 0.0
         })
         e["qty"] += qty
         e["res"] += float(q["reserved_quantity"] or 0.0)
+        e["valor"] += float(q.get("value") or 0.0)
         # ubicacion con mayor cantidad define el almacen
         if qty > 0:
             e["loc"] = loc_id
@@ -182,6 +217,9 @@ def get_data():
         vin = lot_name.get(lot_id, "") if lot_id else ""
         if not vin:
             continue
+        costo = (e["valor"] / e["qty"]) if e["qty"] > 0 else 0.0
+        if costo == 0.0:
+            costo = costo_by_prod.get(prod_id, 0.0)  # respaldo standard_price
         units.append({
             "modelo": modelo_by_prod.get(prod_id, ""),
             "cat": cat_by_prod.get(prod_id, ""),
@@ -189,6 +227,7 @@ def get_data():
             "alma": warehouse_for(loc_name.get(e["loc"], "")),
             "qty": int(e["qty"]),
             "res": 1 if e["res"] > 0 else 0,
+            "costo": costo_by_prod.get(prod_id, 0.0),
             "vin": vin,
         })
 
@@ -203,9 +242,13 @@ def build_html(units):
     for u in units:
         por_alma[u["alma"]] = por_alma.get(u["alma"], 0) + 1
 
+    def valor(alm=None):
+        return sum(u["costo"] * u["qty"] for u in units if alm is None or u["alma"] == alm)
+
     unidades_js = json.dumps(
         [{"modelo": u["modelo"], "cat": u["cat"], "color": u["color"],
-          "alma": u["alma"], "res": bool(u["res"]), "vin": u["vin"]} for u in units],
+          "alma": u["alma"], "res": bool(u["res"]), "qty": u["qty"],
+          "costo": round(u["costo"], 2), "vin": u["vin"]} for u in units],
         ensure_ascii=False, separators=(",", ":")
     )
 
@@ -216,35 +259,48 @@ def build_html(units):
     html = html.replace("__KPI_CONS__", str(por_alma.get("PRINCIPAL", 0)))
     html = html.replace("__KPI_RES__", str(por_alma.get("RESERVAS", 0)))
     html = html.replace("__KPI_REP__", str(por_alma.get("REPARACION", 0)))
+    html = html.replace("__KPI_VALOR__", fmt_money(valor()))
+    html = html.replace("__VALOR_PRIN__", fmt_money(valor("PRINCIPAL")))
+    html = html.replace("__VALOR_RES__", fmt_money(valor("RESERVAS")))
+    html = html.replace("__VALOR_REP__", fmt_money(valor("REPARACION")))
+    html = html.replace("__CURRENCY_JS__", json.dumps(CURRENCY_SYMBOL))
+    html = html.replace("__CURRENCY_POS__", CURRENCY_POSITION)
+    html = html.replace("__CURRENCY_DEC__", str(CURRENCY_DECIMALS))
     html = html.replace("__UNIDADES__", unidades_js)
     html = html.replace("__UPDATED__", updated)
     return html
 
 
 def write_csv(units):
-    # Resumen: Almacen;Categoria;Modelo;Color;Unidades;Reservadas
+    # Resumen: Almacen;Categoria;Modelo;Color;Unidades;Reservadas;CostoUnitario;Valor
     groups = {}
     for u in units:
         k = (u["alma"], u["cat"], u["modelo"], u["color"])
-        groups.setdefault(k, [0, 0])
-        groups[k][0] += u["qty"]
-        groups[k][1] += u["res"]
+        if k not in groups:
+            groups[k] = {"qty": 0, "res": 0, "valor": 0.0, "costo": 0.0}
+        groups[k]["qty"] += u["qty"]
+        groups[k]["res"] += u["res"]
+        groups[k]["valor"] += u["costo"] * u["qty"]
     buf = io.StringIO()
     buf.write("\ufeff")
     w = csv.writer(buf, delimiter=";", lineterminator="\r\n")
-    w.writerow(["Almacen", "Categoria", "Modelo", "Color", "Unidades", "Reservadas"])
+    w.writerow(["Almacen", "Categoria", "Modelo", "Color", "Unidades", "Reservadas", "CostoUnitario", "Valor"])
     for k in sorted(groups):
-        w.writerow([k[0], k[1], k[2], k[3], groups[k][0], groups[k][1]])
+        g = groups[k]
+        costo_u = g["valor"] / g["qty"] if g["qty"] else 0.0
+        w.writerow([k[0], k[1], k[2], k[3], g["qty"], g["res"],
+                    round(costo_u, 2), round(g["valor"], 2)])
     with open("Inventario_Carros_Honda_Resumen.csv", "w", encoding="utf-8", newline="") as f:
         f.write(buf.getvalue())
 
-    # Detalle: Modelo;Categoria;Color;Almacen;Cantidad;Reservada;Vin
+    # Detalle: Modelo;Categoria;Color;Almacen;Cantidad;Reservada;Vin;Costo;Valor
     buf = io.StringIO()
     buf.write("\ufeff")
     w = csv.writer(buf, delimiter=";", lineterminator="\r\n")
-    w.writerow(["Modelo", "Categoria", "Color", "Almacen", "Cantidad", "Reservada", "Vin"])
+    w.writerow(["Modelo", "Categoria", "Color", "Almacen", "Cantidad", "Reservada", "Vin", "Costo", "Valor"])
     for u in units:
-        w.writerow([u["modelo"], u["cat"], u["color"], u["alma"], u["qty"], u["res"], u["vin"]])
+        w.writerow([u["modelo"], u["cat"], u["color"], u["alma"], u["qty"], u["res"],
+                    u["vin"], round(u["costo"], 2), round(u["costo"] * u["qty"], 2)])
     with open("Inventario_Carros_Honda_Detalle.csv", "w", encoding="utf-8", newline="") as f:
         f.write(buf.getvalue())
 
@@ -287,6 +343,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .kpi.green{ border-top-color:#1e9e5a;} .kpi.green .v{ color:#1e9e5a;}
   .kpi.yellow{ border-top-color:#f59e0b;} .kpi.yellow .v{ color:#b45309;}
   .kpi.red{ border-top-color:var(--honda-red);} .kpi.red .v{ color:var(--honda-red);}
+  .kpi.gold{ border-top-color:#b45309;} .kpi.gold .v{ color:#b45309; font-size:26px; white-space:nowrap; }
+  .kpi .v.cur{ font-size:26px; white-space:nowrap; }
 
   .grid{ display:grid; gap:16px; margin-bottom:16px; }
   .grid.cols-2{ grid-template-columns:1fr 1fr; }
@@ -370,6 +428,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="kpi green"><div class="v">__KPI_CONS__</div><div class="l">Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v">__KPI_RES__</div><div class="l">Almacén Reservas</div></div>
     <div class="kpi red"><div class="v">__KPI_REP__</div><div class="l">Almacén Reparación</div></div>
+    <div class="kpi gold"><div class="v cur">__KPI_VALOR__</div><div class="l">Valor total del inventario</div></div>
+  </div>
+
+  <!-- Valor por almacén -->
+  <div class="card" style="margin-bottom:16px;">
+    <h3>Valor del Inventario por Almacén</h3>
+    <table>
+      <thead><tr><th>Almacén</th><th>Unidades</th><th>Valor</th></tr></thead>
+      <tbody id="tblValorAlma"></tbody>
+    </table>
   </div>
 
   <!-- Stock Real por Modelo -->
@@ -393,7 +461,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="card">
       <h3>Resumen por Modelo</h3>
       <table>
-        <thead><tr><th>Modelo</th><th>Unidades</th></tr></thead>
+        <thead><tr><th>Modelo</th><th>Unidades</th><th>Valor</th></tr></thead>
         <tbody id="tblResumen"></tbody>
       </table>
     </div>
@@ -406,7 +474,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <thead>
         <tr>
           <th>#</th><th>Modelo</th><th>Color</th>
-          <th>Almacén</th><th>VIN</th>
+          <th>Almacén</th><th>Costo</th><th>Valor</th><th>VIN</th>
         </tr>
       </thead>
       <tbody id="tblDet"></tbody>
@@ -423,6 +491,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 const unidades = __UNIDADES__;
 
 const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
+
+// ---------- Moneda / formato ----------
+const CURRENCY = __CURRENCY_JS__;
+const CURRENCY_POS = "__CURRENCY_POS__";
+const CURRENCY_DEC = __CURRENCY_DEC__;
+const fmt = n => {
+  const s = Number(n).toLocaleString("en-US", {minimumFractionDigits:CURRENCY_DEC, maximumFractionDigits:CURRENCY_DEC});
+  return CURRENCY_POS === "before" ? CURRENCY + " " + s : s + " " + CURRENCY;
+};
+const val = u => (Number(u.costo) || 0) * (u.qty || 1);
 
 const COLOR_HEX = {
   "Azul Cosmico":   "#0ea5e9",
@@ -530,14 +608,33 @@ const porAlma = group(unidades.map(u => u.alma));
 buildBars("barsAlmacen", porAlma, ALMACEN_COLOR);
 
 // ---------- Tabla resumen por modelo ----------
-const porModelo = group(unidades.map(u => shortModel(u.modelo)));
+const porModelo = {};
+unidades.forEach(u => {
+  const sm = shortModel(u.modelo);
+  if (!porModelo[sm]) porModelo[sm] = { n: 0, v: 0 };
+  porModelo[sm].n += u.qty || 1;
+  porModelo[sm].v += val(u);
+});
 const tblResumen = document.getElementById("tblResumen");
-tblResumen.innerHTML = Object.entries(porModelo).map(([m, n]) =>
-  `<tr><td>${m}</td><td><b>${n}</b></td></tr>`
-).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.length}</td></tr>`;
+tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
+  `<tr><td>${m}</td><td><b>${d.n}</b></td><td>${fmt(d.v)}</td></tr>`
+).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.reduce((s,u)=>s+(u.qty||1),0)}</td><td>${fmt(unidades.reduce((s,u)=>s+val(u),0))}</td></tr>`;
 
 // ---------- Tabla detalle ----------
 const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
+
+// ---------- Valor por almacén ----------
+const porValorAlma = {};
+unidades.forEach(u => {
+  if (!porValorAlma[u.alma]) porValorAlma[u.alma] = { n: 0, v: 0 };
+  porValorAlma[u.alma].n += u.qty || 1;
+  porValorAlma[u.alma].v += val(u);
+});
+const tblValorAlma = document.getElementById("tblValorAlma");
+tblValorAlma.innerHTML = Object.entries(porValorAlma).map(([a, d]) =>
+  `<tr><td><span class="badge ${bdg(a)}">${a}</span></td><td>${d.n}</td><td><b>${fmt(d.v)}</b></td></tr>`
+).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.reduce((s,u)=>s+(u.qty||1),0)}</td><td>${fmt(unidades.reduce((s,u)=>s+val(u),0))}</td></tr>`;
+
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
   <tr>
@@ -545,6 +642,8 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td>${u.modelo}</td>
     <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[u.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${u.color}</td>
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
+    <td>${fmt(u.costo)}</td>
+    <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
   </tr>`).join("");
 </script>
@@ -556,9 +655,10 @@ tblDet.innerHTML = unidades.map((u, i) => `
 def main():
     print("Conectando a Odoo...")
     units = get_data()
-    print(f"Unidades encontradas: {len(units)}")
+    print(f"Unidades encontradas: {len(units)}  |  Moneda: {CURRENCY_SYMBOL}")
     for u in units:
-        print(f"  {u['alma']:12s} | {u['modelo']:34s} | {u['color']:15s} | res={u['res']} | {u['vin']}")
+        print(f"  {u['alma']:12s} | {u['modelo']:34s} | {u['color']:15s} | res={u['res']} | costo={fmt_money(u['costo'])} | {u['vin']}")
+    print(f"VALOR TOTAL INVENTARIO: {fmt_money(sum(u['costo'] * u['qty'] for u in units))}")
 
     html = build_html(units)
     with open("index.html", "w", encoding="utf-8") as f:
