@@ -68,6 +68,15 @@ def clean_color(name):
 
 WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION"}
 
+# Costo unitario por modelo (se aplica a TODAS las unidades del modelo).
+# Definido por el usuario: no se modifica nada en Odoo.
+COSTO_POR_MODELO = {
+    "HONDA CITY 1.5L A/T EXL 2026": 34158.32,
+    "HONDA HR-V 1.5L A/T EXL 2026": 43358.28,
+    "HONDA HR-V 1.5L A/T LX 2026": 38937.52,
+    "HONDA WR-V 1.5L A/T EXL 2026": 38937.52,
+}
+
 CURRENCY_SYMBOL = "$"
 CURRENCY_POSITION = "before"  # 'before' o 'after'
 CURRENCY_DECIMALS = 2
@@ -217,17 +226,21 @@ def get_data():
         vin = lot_name.get(lot_id, "") if lot_id else ""
         if not vin:
             continue
+        modelo = modelo_by_prod.get(prod_id, "")
         costo = (e["valor"] / e["qty"]) if e["qty"] > 0 else 0.0
         if costo == 0.0:
             costo = costo_by_prod.get(prod_id, 0.0)  # respaldo standard_price
+        # Costo manual por modelo (si esta definido, prevalece)
+        if modelo in COSTO_POR_MODELO:
+            costo = COSTO_POR_MODELO[modelo]
         units.append({
-            "modelo": modelo_by_prod.get(prod_id, ""),
+            "modelo": modelo,
             "cat": cat_by_prod.get(prod_id, ""),
             "color": color_by_prod.get(prod_id, ""),
             "alma": warehouse_for(loc_name.get(e["loc"], "")),
             "qty": int(e["qty"]),
             "res": 1 if e["res"] > 0 else 0,
-            "costo": costo_by_prod.get(prod_id, 0.0),
+            "costo": costo,
             "vin": vin,
         })
 
