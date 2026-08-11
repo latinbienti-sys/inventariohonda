@@ -66,7 +66,7 @@ def clean_color(name):
     return strip_accents(name).strip()
 
 
-WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION"}
+WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION", "FNE": "FACTURADO"}
 
 # Costo unitario por modelo (se aplica a TODAS las unidades del modelo).
 # Definido por el usuario: no se modifica nada en Odoo.
@@ -272,6 +272,7 @@ def build_html(units):
     html = html.replace("__KPI_CONS__", str(por_alma.get("PRINCIPAL", 0)))
     html = html.replace("__KPI_RES__", str(por_alma.get("RESERVAS", 0)))
     html = html.replace("__KPI_REP__", str(por_alma.get("REPARACION", 0)))
+    html = html.replace("__KPI_FNE__", str(por_alma.get("FACTURADO", 0)))
     html = html.replace("__KPI_VALOR__", fmt_money(valor()))
     html = html.replace("__VALOR_PRIN__", fmt_money(valor("PRINCIPAL")))
     html = html.replace("__VALOR_RES__", fmt_money(valor("RESERVAS")))
@@ -358,6 +359,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .kpi.red{ border-top-color:var(--honda-red);} .kpi.red .v{ color:var(--honda-red);}
   .kpi.gold{ border-top-color:#b45309;} .kpi.gold .v{ color:#b45309; font-size:26px; white-space:nowrap; }
   .kpi .v.cur{ font-size:26px; white-space:nowrap; }
+  .kpi.indigo{ border-top-color:#536dfe;} .kpi.indigo .v{ color:#3f51b5;}
 
   .grid{ display:grid; gap:16px; margin-bottom:16px; }
   .grid.cols-2{ grid-template-columns:1fr 1fr; }
@@ -403,17 +405,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* ---------- Stock Real por Modelo ---------- */
   .card h3 .sr-legend{ margin-left:auto; font-size:12px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px; }
   .sr-legend .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
-  .dot.d-av{ background:#1e9e5a; } .dot.d-res{ background:#f59e0b; } .dot.d-rep{ background:#e11d48; }
+  .dot.d-av{ background:#1e9e5a; } .dot.d-res{ background:#f59e0b; } .dot.d-rep{ background:#e11d48; } .dot.d-fne{ background:#536dfe; }
   .stock-row{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
   .stock-name{ min-width:138px; font-size:13px; font-weight:700; color:var(--honda-blue); }
   .stock-bar{ flex:1; height:26px; border-radius:8px; overflow:hidden; display:flex; background:#eef1f8; }
   .stock-av{ background:linear-gradient(180deg,#34c07a,#1e9e5a); height:100%; }
   .stock-res{ background:linear-gradient(180deg,#fbbf24,#f59e0b); height:100%; }
   .stock-rep{ background:linear-gradient(180deg,#fb7185,#e11d48); height:100%; }
+  .stock-fne{ background:linear-gradient(180deg,#7b8cff,#536dfe); height:100%; }
   .stock-nums{ min-width:148px; font-size:12px; color:var(--text); text-align:right; white-space:nowrap; }
   .stock-nums b{ color:#1e9e5a; }
   .stock-nums b.r{ color:#b45309; }
   .stock-nums b.p{ color:#e11d48; }
+  .stock-nums b.f{ color:#3f51b5; }
 
   /* ---------- Tabla ---------- */
   table{ width:100%; border-collapse:collapse; font-size:13px; }
@@ -421,7 +425,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   th{ background:var(--honda-blue); color:#fff; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.4px; }
   tr:nth-child(even){ background:#f8faff; }
   .badge{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#fff; }
-  .b-cons{ background:#1e9e5a; } .b-res{ background:#f59e0b; } .b-rep{ background:#e11d48; } .b-lat{ background:#536dfe; }
+  .b-cons{ background:#1e9e5a; } .b-res{ background:#f59e0b; } .b-rep{ background:#e11d48; } .b-lat{ background:#536dfe; } .b-fne{ background:#536dfe; }
   footer{ text-align:center; margin-top:18px; font-size:12px; color:var(--muted); }
 </style>
 </head>
@@ -441,12 +445,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="kpi green"><div class="v">__KPI_CONS__</div><div class="l">Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v">__KPI_RES__</div><div class="l">Almacén Reservas</div></div>
     <div class="kpi red"><div class="v">__KPI_REP__</div><div class="l">Almacén Reparación</div></div>
+    <div class="kpi indigo"><div class="v">__KPI_FNE__</div><div class="l">Facturado - No Entregado</div></div>
     <div class="kpi gold"><div class="v cur">__KPI_VALOR__</div><div class="l">Valor total del inventario</div></div>
   </div>
 
   <!-- Stock Real por Modelo -->
   <div class="card" style="margin-bottom:16px;">
-    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación</span></h3>
+    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación <span class="dot d-fne"></span>Facturado</span></h3>
     <div id="stockReal"></div>
   </div>
 
@@ -546,34 +551,34 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
           </div>`;
 }).join("");
 
-// ---------- Stock Real por Modelo (disponible vs reservado vs reparacion) ----------
-// Disponible = almacen PRINCIPAL | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION
+// ---------- Stock Real por Modelo (disponible vs reservado vs reparacion vs facturado) ----------
+// Disponible = almacen PRINCIPAL | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION | Facturado = almacen FACTURADO
 const stockModelo = {};
 unidades.forEach(u => {
   const sm = shortModel(u.modelo);
-  if (!stockModelo[sm]) stockModelo[sm] = { av: 0, res: 0, rep: 0 };
+  if (!stockModelo[sm]) stockModelo[sm] = { av: 0, res: 0, rep: 0, fne: 0 };
   if (u.alma === "RESERVAS") stockModelo[sm].res++;
   else if (u.alma === "REPARACION") stockModelo[sm].rep++;
+  else if (u.alma === "FACTURADO") stockModelo[sm].fne++;
   else stockModelo[sm].av++;
 });
 function stockRowHtml(nombre, d) {
-  const total = d.av + d.res + d.rep;
-  const pAv = total ? (d.av / total * 100).toFixed(1) : 0;
-  const pRes = total ? (d.res / total * 100).toFixed(1) : 0;
-  const pRep = total ? (d.rep / total * 100).toFixed(1) : 0;
+  const total = d.av + d.res + d.rep + d.fne;
+  const p = v => total ? (v / total * 100).toFixed(1) : 0;
   return `<div class="stock-row">
     <span class="stock-name">${nombre}</span>
     <div class="stock-bar">
-      <div class="stock-av" style="width:${pAv}%"></div>
-      <div class="stock-res" style="width:${pRes}%"></div>
-      <div class="stock-rep" style="width:${pRep}%"></div>
+      <div class="stock-av" style="width:${p(d.av)}%"></div>
+      <div class="stock-res" style="width:${p(d.res)}%"></div>
+      <div class="stock-rep" style="width:${p(d.rep)}%"></div>
+      <div class="stock-fne" style="width:${p(d.fne)}%"></div>
     </div>
-    <span class="stock-nums"><b>${d.av}</b> disp · <b class="r">${d.res}</b> res${d.rep ? ` · <b class="p">${d.rep}</b> rep` : ""}</span>
+    <span class="stock-nums"><b>${d.av}</b> disp · <b class="r">${d.res}</b> res${d.rep ? ` · <b class="p">${d.rep}</b> rep` : ""}${d.fne ? ` · <b class="f">${d.fne}</b> fact` : ""}</span>
   </div>`;
 }
-const srTotal = { av: 0, res: 0, rep: 0 };
-Object.entries(stockModelo).forEach(([m, d]) => { srTotal.av += d.av; srTotal.res += d.res; srTotal.rep += d.rep; });
-const srT = srTotal.av + srTotal.res + srTotal.rep;
+const srTotal = { av: 0, res: 0, rep: 0, fne: 0 };
+Object.entries(stockModelo).forEach(([m, d]) => { srTotal.av += d.av; srTotal.res += d.res; srTotal.rep += d.rep; srTotal.fne += d.fne; });
+const srT = srTotal.av + srTotal.res + srTotal.rep + srTotal.fne;
 document.getElementById("stockReal").innerHTML =
   Object.entries(stockModelo).map(([m, d]) => stockRowHtml(m, d)).join("") +
   `<div class="stock-row" style="border-top:2px solid var(--border);padding-top:10px;font-weight:700">
@@ -582,12 +587,13 @@ document.getElementById("stockReal").innerHTML =
       <div class="stock-av" style="width:${(srTotal.av / srT * 100).toFixed(1)}%"></div>
       <div class="stock-res" style="width:${(srTotal.res / srT * 100).toFixed(1)}%"></div>
       <div class="stock-rep" style="width:${(srTotal.rep / srT * 100).toFixed(1)}%"></div>
+      <div class="stock-fne" style="width:${(srTotal.fne / srT * 100).toFixed(1)}%"></div>
     </div>
-    <span class="stock-nums" style="font-weight:800"><b>${srTotal.av}</b> disponibles · <b class="r">${srTotal.res}</b> reservados · <b class="p">${srTotal.rep}</b> en reparación</span>
+    <span class="stock-nums" style="font-weight:800"><b>${srTotal.av}</b> disponibles · <b class="r">${srTotal.res}</b> reservados · <b class="p">${srTotal.rep}</b> en reparación${srTotal.fne ? ` · <b class="f">${srTotal.fne}</b> facturados` : ""}</span>
   </div>`;
 
 // ---------- Barras: unidades por almacén ----------
-const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "LATIN":"#536dfe" };
+const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "FACTURADO":"#536dfe", "LATIN":"#536dfe" };
 function buildBars(id, data, colorMap){
   const max = Math.max(...Object.values(data), 1);
   const el = document.getElementById(id);
@@ -628,7 +634,7 @@ tblResumen.innerHTML = Object.entries(porModelo).map(([m, d]) =>
 ).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totN}</td><td>—</td><td>${fmt(totV)}</td></tr>`;
 
 // ---------- Tabla detalle ----------
-const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
+const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : a === "FACTURADO" ? "b-fne" : "b-lat";
 
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
