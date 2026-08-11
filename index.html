@@ -160,7 +160,7 @@
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 17:46 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 17:53 UTC</span></footer>
 </div>
 
 <script>
@@ -211,7 +211,8 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
 }).join("");
 
 // ---------- Stock Real por Modelo (reservado vs disponible) ----------
-const isReserv = u => u.alma === "RESERVAS" || u.res;
+// Reservado = unidad en el almacen RESERVAS (no cuenta el flag de reserva de Odoo)
+const isReserv = u => u.alma === "RESERVAS";
 const stockModelo = {};
 unidades.forEach(u => {
   const sm = shortModel(u.modelo);

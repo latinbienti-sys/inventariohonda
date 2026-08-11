@@ -462,7 +462,8 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
 }).join("");
 
 // ---------- Stock Real por Modelo (reservado vs disponible) ----------
-const isReserv = u => u.alma === "RESERVAS" || u.res;
+// Reservado = unidad en el almacen RESERVAS (no cuenta el flag de reserva de Odoo)
+const isReserv = u => u.alma === "RESERVAS";
 const stockModelo = {};
 unidades.forEach(u => {
   const sm = shortModel(u.modelo);
