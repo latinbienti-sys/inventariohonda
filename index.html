@@ -81,15 +81,17 @@
   /* ---------- Stock Real por Modelo ---------- */
   .card h3 .sr-legend{ margin-left:auto; font-size:12px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px; }
   .sr-legend .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
-  .dot.d-av{ background:#1e9e5a; } .dot.d-res{ background:#f59e0b; }
+  .dot.d-av{ background:#1e9e5a; } .dot.d-res{ background:#f59e0b; } .dot.d-rep{ background:#e11d48; }
   .stock-row{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
   .stock-name{ min-width:138px; font-size:13px; font-weight:700; color:var(--honda-blue); }
   .stock-bar{ flex:1; height:26px; border-radius:8px; overflow:hidden; display:flex; background:#eef1f8; }
   .stock-av{ background:linear-gradient(180deg,#34c07a,#1e9e5a); height:100%; }
   .stock-res{ background:linear-gradient(180deg,#fbbf24,#f59e0b); height:100%; }
+  .stock-rep{ background:linear-gradient(180deg,#fb7185,#e11d48); height:100%; }
   .stock-nums{ min-width:148px; font-size:12px; color:var(--text); text-align:right; white-space:nowrap; }
   .stock-nums b{ color:#1e9e5a; }
   .stock-nums b.r{ color:#b45309; }
+  .stock-nums b.p{ color:#e11d48; }
 
   /* ---------- Tabla ---------- */
   table{ width:100%; border-collapse:collapse; font-size:13px; }
@@ -121,7 +123,7 @@
 
   <!-- Stock Real por Modelo -->
   <div class="card" style="margin-bottom:16px;">
-    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado</span></h3>
+    <h3>Stock Real por Modelo <span class="sr-legend"><span class="dot d-av"></span>Disponible <span class="dot d-res"></span>Reservado <span class="dot d-rep"></span>En reparación</span></h3>
     <div id="stockReal"></div>
   </div>
 
@@ -160,7 +162,7 @@
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 17:59 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 18:19 UTC</span></footer>
 </div>
 
 <script>
@@ -211,40 +213,44 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
           </div>`;
 }).join("");
 
-// ---------- Stock Real por Modelo (reservado vs disponible) ----------
-// Reservado = unidad en el almacen RESERVAS (no cuenta el flag de reserva de Odoo)
-const isReserv = u => u.alma === "RESERVAS";
+// ---------- Stock Real por Modelo (disponible vs reservado vs reparacion) ----------
+// Disponible = almacen CONSIGNACION | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION
 const stockModelo = {};
 unidades.forEach(u => {
   const sm = shortModel(u.modelo);
-  if (!stockModelo[sm]) stockModelo[sm] = { total: 0, res: 0 };
-  stockModelo[sm].total++;
-  if (isReserv(u)) stockModelo[sm].res++;
+  if (!stockModelo[sm]) stockModelo[sm] = { av: 0, res: 0, rep: 0 };
+  if (u.alma === "RESERVAS") stockModelo[sm].res++;
+  else if (u.alma === "REPARACION") stockModelo[sm].rep++;
+  else stockModelo[sm].av++;
 });
 function stockRowHtml(nombre, d) {
-  const av = d.total - d.res;
-  const pAv = d.total ? (av / d.total * 100).toFixed(1) : 0;
-  const pRes = d.total ? (d.res / d.total * 100).toFixed(1) : 0;
+  const total = d.av + d.res + d.rep;
+  const pAv = total ? (d.av / total * 100).toFixed(1) : 0;
+  const pRes = total ? (d.res / total * 100).toFixed(1) : 0;
+  const pRep = total ? (d.rep / total * 100).toFixed(1) : 0;
   return `<div class="stock-row">
     <span class="stock-name">${nombre}</span>
     <div class="stock-bar">
       <div class="stock-av" style="width:${pAv}%"></div>
       <div class="stock-res" style="width:${pRes}%"></div>
+      <div class="stock-rep" style="width:${pRep}%"></div>
     </div>
-    <span class="stock-nums"><b>${av}</b> disponibles · <b class="r">${d.res}</b> reservados</span>
+    <span class="stock-nums"><b>${d.av}</b> disp · <b class="r">${d.res}</b> res${d.rep ? ` · <b class="p">${d.rep}</b> rep` : ""}</span>
   </div>`;
 }
-const srTotal = { total: 0, res: 0 };
-Object.entries(stockModelo).forEach(([m, d]) => { srTotal.total += d.total; srTotal.res += d.res; });
+const srTotal = { av: 0, res: 0, rep: 0 };
+Object.entries(stockModelo).forEach(([m, d]) => { srTotal.av += d.av; srTotal.res += d.res; srTotal.rep += d.rep; });
+const srT = srTotal.av + srTotal.res + srTotal.rep;
 document.getElementById("stockReal").innerHTML =
   Object.entries(stockModelo).map(([m, d]) => stockRowHtml(m, d)).join("") +
   `<div class="stock-row" style="border-top:2px solid var(--border);padding-top:10px;font-weight:700">
-    <span class="stock-name">TOTAL (${srTotal.total} unidades)</span>
+    <span class="stock-name">TOTAL (${srT} unidades)</span>
     <div class="stock-bar">
-      <div class="stock-av" style="width:${((srTotal.total - srTotal.res) / srTotal.total * 100).toFixed(1)}%"></div>
-      <div class="stock-res" style="width:${(srTotal.res / srTotal.total * 100).toFixed(1)}%"></div>
+      <div class="stock-av" style="width:${(srTotal.av / srT * 100).toFixed(1)}%"></div>
+      <div class="stock-res" style="width:${(srTotal.res / srT * 100).toFixed(1)}%"></div>
+      <div class="stock-rep" style="width:${(srTotal.rep / srT * 100).toFixed(1)}%"></div>
     </div>
-    <span class="stock-nums" style="font-weight:800"><b>${srTotal.total - srTotal.res}</b> disponibles · <b class="r">${srTotal.res}</b> reservados</span>
+    <span class="stock-nums" style="font-weight:800"><b>${srTotal.av}</b> disponibles · <b class="r">${srTotal.res}</b> reservados · <b class="p">${srTotal.rep}</b> en reparación</span>
   </div>`;
 
 // ---------- Barras: unidades por almacén ----------
