@@ -116,7 +116,7 @@
   <!-- KPIs -->
   <div class="kpis">
     <div class="kpi"><div class="v">15</div><div class="l">Total unidades en inventario</div></div>
-    <div class="kpi green"><div class="v">8</div><div class="l">Almacén Consignación</div></div>
+    <div class="kpi green"><div class="v">8</div><div class="l">Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v">6</div><div class="l">Almacén Reservas</div></div>
     <div class="kpi red"><div class="v">1</div><div class="l">Almacén Reparación</div></div>
   </div>
@@ -162,14 +162,14 @@
     </table>
   </div>
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 18:19 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-11 18:23 UTC</span></footer>
 </div>
 
 <script>
 "use strict";
 
 // ================== DATOS ==================
-const unidades = [{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"CONSIGNACION","res":false,"vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"CONSIGNACION","res":true,"vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"CONSIGNACION","res":false,"vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"CONSIGNACION","res":false,"vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"CONSIGNACION","res":true,"vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"CONSIGNACION","res":false,"vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"CONSIGNACION","res":false,"vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"CONSIGNACION","res":false,"vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"RESERVAS","res":false,"vin":"93HDG5840TK503972"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"vin":"93HDG5840TK503056"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"vin":"93HDG5840TK502944"}];
+const unidades = [{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"PRINCIPAL","res":true,"vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"PRINCIPAL","res":false,"vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"RESERVAS","res":false,"vin":"93HDG5840TK503972"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"vin":"93HDG5840TK503056"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"vin":"93HDG5840TK502944"}];
 
 const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
 
@@ -190,7 +190,7 @@ function shortModel(m){
 
 const modelos = {};
 unidades.forEach(u => {
-  if (u.alma !== "CONSIGNACION") return; // solo unidades en consignacion
+  if (u.alma !== "PRINCIPAL") return; // solo unidades del almacen principal
   const sm = shortModel(u.modelo);
   if (!modelos[sm]) modelos[sm] = {};
   modelos[sm][u.color] = (modelos[sm][u.color] || 0) + 1;
@@ -214,7 +214,7 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
 }).join("");
 
 // ---------- Stock Real por Modelo (disponible vs reservado vs reparacion) ----------
-// Disponible = almacen CONSIGNACION | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION
+// Disponible = almacen PRINCIPAL | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION
 const stockModelo = {};
 unidades.forEach(u => {
   const sm = shortModel(u.modelo);
@@ -254,7 +254,7 @@ document.getElementById("stockReal").innerHTML =
   </div>`;
 
 // ---------- Barras: unidades por almacén ----------
-const ALMACEN_COLOR = { "CONSIGNACION":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "LATIN":"#536dfe" };
+const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "LATIN":"#536dfe" };
 function buildBars(id, data, colorMap){
   const max = Math.max(...Object.values(data), 1);
   const el = document.getElementById(id);
@@ -286,7 +286,7 @@ tblResumen.innerHTML = Object.entries(porModelo).map(([m, n]) =>
 ).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.length}</td></tr>`;
 
 // ---------- Tabla detalle ----------
-const bdg = a => a === "CONSIGNACION" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
+const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
   <tr>

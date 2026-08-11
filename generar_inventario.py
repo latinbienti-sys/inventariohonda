@@ -66,7 +66,7 @@ def clean_color(name):
     return strip_accents(name).strip()
 
 
-WH_MAP = {"LATIN": "LATIN", "CLBM": "CONSIGNACION", "RLBM": "RESERVAS", "RPLMH": "REPARACION"}
+WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION"}
 
 
 def warehouse_for(loc_name):
@@ -213,7 +213,7 @@ def build_html(units):
 
     html = HTML_TEMPLATE
     html = html.replace("__KPI_TOTAL__", str(total))
-    html = html.replace("__KPI_CONS__", str(por_alma.get("CONSIGNACION", 0)))
+    html = html.replace("__KPI_CONS__", str(por_alma.get("PRINCIPAL", 0)))
     html = html.replace("__KPI_RES__", str(por_alma.get("RESERVAS", 0)))
     html = html.replace("__KPI_REP__", str(por_alma.get("REPARACION", 0)))
     html = html.replace("__UNIDADES__", unidades_js)
@@ -367,7 +367,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <!-- KPIs -->
   <div class="kpis">
     <div class="kpi"><div class="v">__KPI_TOTAL__</div><div class="l">Total unidades en inventario</div></div>
-    <div class="kpi green"><div class="v">__KPI_CONS__</div><div class="l">Almacén Consignación</div></div>
+    <div class="kpi green"><div class="v">__KPI_CONS__</div><div class="l">Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v">__KPI_RES__</div><div class="l">Almacén Reservas</div></div>
     <div class="kpi red"><div class="v">__KPI_REP__</div><div class="l">Almacén Reparación</div></div>
   </div>
@@ -441,7 +441,7 @@ function shortModel(m){
 
 const modelos = {};
 unidades.forEach(u => {
-  if (u.alma !== "CONSIGNACION") return; // solo unidades en consignacion
+  if (u.alma !== "PRINCIPAL") return; // solo unidades del almacen principal
   const sm = shortModel(u.modelo);
   if (!modelos[sm]) modelos[sm] = {};
   modelos[sm][u.color] = (modelos[sm][u.color] || 0) + 1;
@@ -465,7 +465,7 @@ gridEl.innerHTML = Object.keys(modelos).map(m => {
 }).join("");
 
 // ---------- Stock Real por Modelo (disponible vs reservado vs reparacion) ----------
-// Disponible = almacen CONSIGNACION | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION
+// Disponible = almacen PRINCIPAL | Reservado = almacen RESERVAS | En reparacion = almacen REPARACION
 const stockModelo = {};
 unidades.forEach(u => {
   const sm = shortModel(u.modelo);
@@ -505,7 +505,7 @@ document.getElementById("stockReal").innerHTML =
   </div>`;
 
 // ---------- Barras: unidades por almacén ----------
-const ALMACEN_COLOR = { "CONSIGNACION":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "LATIN":"#536dfe" };
+const ALMACEN_COLOR = { "PRINCIPAL":"#1e9e5a", "RESERVAS":"#f59e0b", "REPARACION":"#e11d48", "LATIN":"#536dfe" };
 function buildBars(id, data, colorMap){
   const max = Math.max(...Object.values(data), 1);
   const el = document.getElementById(id);
@@ -537,7 +537,7 @@ tblResumen.innerHTML = Object.entries(porModelo).map(([m, n]) =>
 ).join("") + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${unidades.length}</td></tr>`;
 
 // ---------- Tabla detalle ----------
-const bdg = a => a === "CONSIGNACION" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
+const bdg = a => a === "PRINCIPAL" ? "b-cons" : a === "RESERVAS" ? "b-res" : a === "REPARACION" ? "b-rep" : "b-lat";
 const tblDet = document.getElementById("tblDet");
 tblDet.innerHTML = unidades.map((u, i) => `
   <tr>
