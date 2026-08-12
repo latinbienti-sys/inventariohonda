@@ -71,10 +71,10 @@ WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "R
 # Costo unitario por modelo (se aplica a TODAS las unidades del modelo).
 # Definido por el usuario: no se modifica nada en Odoo.
 COSTO_POR_MODELO = {
-    "HONDA CITY 1.5L A/T EXL 2026": 34158.32,
-    "HONDA HR-V 1.5L A/T EXL 2026": 43358.28,
-    "HONDA HR-V 1.5L A/T LX 2026": 38937.52,
-    "HONDA WR-V 1.5L A/T EXL 2026": 38937.52,
+    "HONDA CITY 1.5L A/T EXL 2026": 27900.00,
+    "HONDA HR-V 1.5L A/T EXL 2026": 35600.00,
+    "HONDA HR-V 1.5L A/T LX 2026": 31900.00,
+    "HONDA WR-V 1.5L A/T EXL 2026": 31900.00,
 }
 
 CURRENCY_SYMBOL = "$"
