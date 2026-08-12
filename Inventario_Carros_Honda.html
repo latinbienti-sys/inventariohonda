@@ -131,6 +131,8 @@
   .qty-blue{ background:#1e9e5a; }
   .st-ok{ color:#1e9e5a; font-weight:700; }
   .st-nok{ color:#e11d48; font-weight:700; }
+  a.lk{ color:#0f3460; text-decoration:none; font-weight:700; border-bottom:1px dotted #0f3460; }
+  a.lk:hover{ color:#cc0000; border-bottom-color:#cc0000; }
 </style>
 </head>
 <body>
@@ -233,14 +235,15 @@
     </div>
   </div><!-- /tabComercial -->
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-12 19:54 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-12 20:23 UTC</span></footer>
 </div>
 
 <script>
 "use strict";
 
 // ================== DATOS ==================
-const unidades = [{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"FNE","res":false,"qty":1,"costo":31900.0,"contacto":"YOANA SORIMAR LACRUZ QUINTERO","vin":"93HDG5840TK503968"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":31900.0,"contacto":"YADIRA COROMOTO ARIZA","vin":"93HDG5840TK502944"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":27900.0,"contacto":"","vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"PRINCIPAL","res":true,"qty":1,"costo":27900.0,"contacto":"","vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"qty":1,"costo":35600.0,"contacto":"","vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"","vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"","vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"STEFANO CADAMURO","vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"qty":1,"costo":31900.0,"contacto":"LATINBIENMOTORS C.A","vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"MARLY CECILIA VIELMA DE PAREDES","vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":35600.0,"contacto":"JESUS ALFONSO UGUETO LEAL","vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"MARIA SOLEDAD GONZALEZ REYES","vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"STEFANO CADAMURO","vin":"93HDG5840TK503056"}];
+const ODOO_BASE = "https://latinbienmotors.com";
+const unidades = [{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Nordico","alma":"FNE","res":false,"qty":1,"costo":31900.0,"contacto":"YOANA SORIMAR LACRUZ QUINTERO","contacto_id":56323,"vin":"93HDG5840TK503968"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":31900.0,"contacto":"YADIRA COROMOTO ARIZA","contacto_id":56260,"vin":"93HDG5840TK502944"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":27900.0,"contacto":"","contacto_id":"","vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"PRINCIPAL","res":true,"qty":1,"costo":27900.0,"contacto":"","contacto_id":"","vin":"93HGN2670TK600220"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3860TK304092"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"","contacto_id":"","vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"","contacto_id":"","vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"STEFANO CADAMURO","contacto_id":55823,"vin":"93HDG5840TK503048"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"REPARACION","res":false,"qty":1,"costo":31900.0,"contacto":"LATINBIENMOTORS C.A","contacto_id":56081,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"MARLY CECILIA VIELMA DE PAREDES","contacto_id":56347,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":35600.0,"contacto":"JESUS ALFONSO UGUETO LEAL","contacto_id":56365,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"MARIA SOLEDAD GONZALEZ REYES","contacto_id":56316,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"STEFANO CADAMURO","contacto_id":55823,"vin":"93HDG5840TK503056"}];
 
 const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
 
@@ -386,7 +389,7 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
     <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
-    <td>${u.alma === "RESERVAS" || u.alma === "FNE" ? (u.contacto || "—") : "—"}</td>
+    <td>${u.alma === "RESERVAS" || u.alma === "FNE" ? (u.contacto_id ? `<a href="${ODOO_BASE}/web#id=${u.contacto_id}&model=res.partner&view_type=form" target="_blank" rel="noopener" class="lk">${u.contacto || "—"}</a>` : (u.contacto || "—")) : "—"}</td>
   </tr>`).join("");
 
 // ================== PESTAÑAS ==================
@@ -400,7 +403,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 // ================== STATUS COMERCIAL ==================
-const statusComercial = [{"id":4424,"orden":"Nuevo","cliente":"YADIRA COROMOTO ARIZA","fecha":"2026-08-10","modelo":"HONDA WR-V 1.5L A/T EXL 2026","color":"Plata Metalico","ref":"WR-VEXL26-NH-830M","qty":1.0,"disp":0.0,"ok":false},{"id":4427,"orden":"Nuevo","cliente":"TEST2","fecha":"2026-08-11","modelo":"HONDA HR-V 1.5L A/T EXL 2026","color":"Rojo Metalico","ref":"HR-VEXL26-R525P","qty":1.0,"disp":0.0,"ok":false},{"id":4427,"orden":"Nuevo","cliente":"TEST2","fecha":"2026-08-11","modelo":"HONDA HR-V 1.5L A/T EXL 2026","color":"Azul Cosmico","ref":"HR-VEXL26-B607M","qty":1.0,"disp":1.0,"ok":true}];
+const statusComercial = [{"id":4424,"orden":"Nuevo","cliente":"YADIRA COROMOTO ARIZA","cid":56260,"fecha":"2026-08-10","modelo":"HONDA WR-V 1.5L A/T EXL 2026","color":"Plata Metalico","ref":"WR-VEXL26-NH-830M","qty":1.0,"disp":0.0,"ok":false},{"id":4427,"orden":"Nuevo","cliente":"TEST2","cid":56366,"fecha":"2026-08-11","modelo":"HONDA HR-V 1.5L A/T EXL 2026","color":"Rojo Metalico","ref":"HR-VEXL26-R525P","qty":1.0,"disp":0.0,"ok":false},{"id":4427,"orden":"Nuevo","cliente":"TEST2","cid":56366,"fecha":"2026-08-11","modelo":"HONDA HR-V 1.5L A/T EXL 2026","color":"Azul Cosmico","ref":"HR-VEXL26-B607M","qty":1.0,"disp":1.0,"ok":true}];
 
 function shortRef(ref){
   return ref.replace(/^\[([^\]]+)\].*$/, "$1");
@@ -430,7 +433,7 @@ tblComercial.innerHTML = statusComercial.map(r => {
     : `<span class="st-nok">⚠ Previsión</span>`;
   return `<tr>
     <td><b>${r.orden}</b></td>
-    <td>${r.cliente}</td>
+    <td>${r.cid ? `<a href="${ODOO_BASE}/web#id=${r.cid}&model=res.partner&view_type=form" target="_blank" rel="noopener" class="lk">${r.cliente}</a>` : r.cliente}</td>
     <td>${r.fecha}</td>
     <td>${r.modelo}</td>
     <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[r.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${r.color}</td>

@@ -250,6 +250,7 @@ def get_data():
             if not mv.get("partner_id"):
                 continue
             nombre = mv["partner_id"][1] if isinstance(mv.get("partner_id"), (list, tuple)) else str(mv.get("partner_id"))
+            pid = mv["partner_id"][0] if isinstance(mv.get("partner_id"), (list, tuple)) else mv.get("partner_id")
             fecha = str(mv.get("date") or "")
             lots_mv = mv.get("lot_ids")
             if lots_mv and not isinstance(lots_mv, list):
@@ -259,7 +260,7 @@ def get_data():
             for x in lots_mv:
                 lid = x[0] if isinstance(x, (list, tuple)) else x
                 if lid not in contacto_by_lot or fecha > contacto_by_lot[lid][0]:
-                    contacto_by_lot[lid] = (fecha, nombre)
+                    contacto_by_lot[lid] = (fecha, nombre, pid)
 
     # 8) Consolidar solo ubicaciones internas con cantidad > 0
     agg = {}
@@ -303,7 +304,8 @@ def get_data():
             "qty": int(e["qty"]),
             "res": 1 if e["res"] > 0 else 0,
             "costo": costo,
-            "contacto": (contacto_by_lot.get(lot_id, ("", ""))[1]) if lot_id else "",
+            "contacto": (contacto_by_lot.get(lot_id, ("", "", ""))[1]) if lot_id else "",
+            "contacto_id": (contacto_by_lot.get(lot_id, ("", "", ""))[2]) if lot_id else "",
             "vin": vin,
         })
 
@@ -357,6 +359,7 @@ def get_status_comercial():
             "id": o.get("id", 0),
             "orden": o.get("name", ""),
             "cliente": o.get("partner_id", ("", ""))[1] if o.get("partner_id") else "",
+            "cid": o.get("partner_id", (0,))[0] if o.get("partner_id") else 0,
             "fecha": str(o.get("date_order") or "")[:10],
             "modelo": MODELO_BY_PROD.get(pid, ""),
             "color": COLOR_BY_PROD.get(pid, ""),
@@ -384,7 +387,7 @@ def build_html(units, status_comercial):
         [{"modelo": u["modelo"], "cat": u["cat"], "color": u["color"],
           "alma": u["alma"], "res": bool(u["res"]), "qty": u["qty"],
           "costo": round(u["costo"], 2), "contacto": u.get("contacto", ""),
-          "vin": u["vin"]} for u in units],
+          "contacto_id": u.get("contacto_id", ""), "vin": u["vin"]} for u in units],
         ensure_ascii=False, separators=(",", ":")
     )
 
@@ -413,6 +416,7 @@ def build_html(units, status_comercial):
     html = html.replace("__CURRENCY_DEC__", str(CURRENCY_DECIMALS))
     html = html.replace("__UNIDADES__", unidades_js)
     html = html.replace("__STATUS_COMERCIAL__", status_js)
+    html = html.replace("__ODOO_BASE__", BASE)
     html = html.replace("__SC_ORDENES__", str(n_ordenes))
     html = html.replace("__SC_UNIDADES__", str(n_unidades))
     html = html.replace("__SC_SIN_STOCK__", str(n_sin_stock))
@@ -587,6 +591,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .qty-blue{ background:#1e9e5a; }
   .st-ok{ color:#1e9e5a; font-weight:700; }
   .st-nok{ color:#e11d48; font-weight:700; }
+  a.lk{ color:#0f3460; text-decoration:none; font-weight:700; border-bottom:1px dotted #0f3460; }
+  a.lk:hover{ color:#cc0000; border-bottom-color:#cc0000; }
 </style>
 </head>
 <body>
@@ -696,6 +702,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 "use strict";
 
 // ================== DATOS ==================
+const ODOO_BASE = "__ODOO_BASE__";
 const unidades = __UNIDADES__;
 
 const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
@@ -842,7 +849,7 @@ tblDet.innerHTML = unidades.map((u, i) => `
     <td><span class="badge ${bdg(u.alma)}">${u.alma}</span></td>
     <td><b>${fmt(val(u))}</b></td>
     <td style="font-family:Consolas,monospace">${u.vin}</td>
-    <td>${u.alma === "RESERVAS" || u.alma === "FNE" ? (u.contacto || "—") : "—"}</td>
+    <td>${u.alma === "RESERVAS" || u.alma === "FNE" ? (u.contacto_id ? `<a href="${ODOO_BASE}/web#id=${u.contacto_id}&model=res.partner&view_type=form" target="_blank" rel="noopener" class="lk">${u.contacto || "—"}</a>` : (u.contacto || "—")) : "—"}</td>
   </tr>`).join("");
 
 // ================== PESTAÑAS ==================
@@ -886,7 +893,7 @@ tblComercial.innerHTML = statusComercial.map(r => {
     : `<span class="st-nok">⚠ Previsión</span>`;
   return `<tr>
     <td><b>${r.orden}</b></td>
-    <td>${r.cliente}</td>
+    <td>${r.cid ? `<a href="${ODOO_BASE}/web#id=${r.cid}&model=res.partner&view_type=form" target="_blank" rel="noopener" class="lk">${r.cliente}</a>` : r.cliente}</td>
     <td>${r.fecha}</td>
     <td>${r.modelo}</td>
     <td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLOR_HEX[r.color]||'#94a3b8'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px"></span>${r.color}</td>
