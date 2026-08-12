@@ -616,6 +616,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="kpi indigo"><div class="v">__KPI_FNE__</div><div class="l">Facturado - No Entregado</div></div>
     <div class="kpi gold"><div class="v cur">__KPI_VALOR__</div><div class="l">Valor total del inventario</div></div>
     <div class="kpi gold"><div class="v cur">__VALOR_PRIN__</div><div class="l">Valor Almacén Principal</div></div>
+    <div class="kpi yellow"><div class="v cur">__VALOR_RES__</div><div class="l">Valor Almacén Reservas</div></div>
   </div>
 
   <!-- Stock Real por Modelo -->
