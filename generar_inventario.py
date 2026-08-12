@@ -407,6 +407,7 @@ def build_html(units, status_comercial):
     html = html.replace("__VALOR_PRIN__", fmt_money(valor("PRINCIPAL")))
     html = html.replace("__VALOR_RES__", fmt_money(valor("RESERVAS")))
     html = html.replace("__VALOR_REP__", fmt_money(valor("REPARACION")))
+    html = html.replace("__VALOR_FNE__", fmt_money(valor("FNE")))
     html = html.replace("__CURRENCY_JS__", json.dumps(CURRENCY_SYMBOL))
     html = html.replace("__CURRENCY_POS__", CURRENCY_POSITION)
     html = html.replace("__CURRENCY_DEC__", str(CURRENCY_DECIMALS))
@@ -617,6 +618,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="kpi gold"><div class="v cur">__KPI_VALOR__</div><div class="l">Valor total del inventario</div></div>
     <div class="kpi gold"><div class="v cur">__VALOR_PRIN__</div><div class="l">Valor Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v cur">__VALOR_RES__</div><div class="l">Valor Almacén Reservas</div></div>
+    <div class="kpi red"><div class="v cur">__VALOR_REP__</div><div class="l">Valor Almacén Reparación</div></div>
+    <div class="kpi indigo"><div class="v cur">__VALOR_FNE__</div><div class="l">Valor Almacén Facturado</div></div>
   </div>
 
   <!-- Stock Real por Modelo -->
