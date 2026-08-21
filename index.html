@@ -217,79 +217,89 @@
   <!-- Panel: Facturación -->
   <div class="tab-panel" id="tabFacturacion">
 
-    <!-- KPIs de Facturación -->
+    <!-- KPIs -->
     <div class="kpis" style="margin-bottom:20px;">
-      <div class="kpi"><div class="v" id="kpiTotalEntregadoCantidad">0</div><div class="l">Unidades Entregadas</div></div>
-      <div class="kpi green"><div class="v" id="kpiTotalEntregadoMonto">$ 0.00</div><div class="l">Monto Entregado</div></div>
-      <div class="kpi red"><div class="v" id="kpiTotalFne">$ 0.00</div><div class="l">Facturado No Entregado</div></div>
-      <div class="kpi indigo"><div class="v" id="kpiTotalAdministrativo">$ 0.00</div><div class="l">Gasto Entrega</div></div>
+      <div class="kpi"><div class="v" id="kpiEntregadas">0</div><div class="l">Unidades Entregadas</div></div>
+      <div class="kpi green"><div class="v" id="kpiMontoEntregado">$ 0.00</div><div class="l">Monto Entregado</div></div>
+      <div class="kpi red"><div class="v" id="kpiGastoEntrega">$ 0.00</div><div class="l">Facturado Gasto de Entrega</div></div>
+      <div class="kpi indigo"><div class="v" id="kpiTotalFacturado">$ 0.00</div><div class="l">Total Facturado</div></div>
     </div>
 
-    <!-- Gráfico: Entregado por Mes (Cantidad y Monto) -->
+    <!-- Entregado por Mes -->
     <div class="card" style="margin-bottom:16px;">
-      <h3>Entregado por Mes — Cantidad y Monto</h3>
-      <canvas id="chartMes"></canvas>
+      <h3>Entregado por Mes (delivery date) — Cantidad y Monto</h3>
+      <div style="position:relative;height:300px;width:100%"><canvas id="chartMes"></canvas></div>
     </div>
 
-    <!-- Gráfico: Entregado por Ejecutivo y Modelo -->
-    <div class="grid cols-2">
+    <!-- Ejecutivo y Modelo -->
+    <div class="grid cols-2" style="margin-bottom:16px;">
       <div class="card">
         <h3>Entregado por Ejecutivo — Cantidad y Monto</h3>
-        <canvas id="chartEjecutivo"></canvas>
+        <div style="position:relative;height:300px;width:100%"><canvas id="chartEjecutivo"></canvas></div>
       </div>
       <div class="card">
         <h3>Entregado por Modelo — Cantidad y Monto</h3>
-        <canvas id="chartModelo"></canvas>
+        <div style="position:relative;height:300px;width:100%"><canvas id="chartModelo"></canvas></div>
       </div>
     </div>
 
-    <!-- Tabla de Detalle de Facturas -->
+    <!-- Modelo más vendido por mes -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Modelo más vendido por Mes</h3>
+      <div style="position:relative;height:300px;width:100%"><canvas id="chartTopModelo"></canvas></div>
+      <div style="overflow-x:auto;margin-top:10px;">
+        <table>
+          <thead><tr><th>Mes</th><th>Modelo más vendido</th><th>Unidades</th><th>Monto</th></tr></thead>
+          <tbody id="tblTopModelo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Por Status Operativo -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Facturación por Status Operativo</h3>
+      <div style="position:relative;height:300px;width:100%"><canvas id="chartStatus"></canvas></div>
+      <div style="overflow-x:auto;margin-top:10px;">
+        <table>
+          <thead><tr><th>Status Operativo</th><th>Cantidad</th><th>Monto</th></tr></thead>
+          <tbody id="tblStatus"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detalle -->
     <div class="card" style="margin-bottom:16px;">
       <h3>Detalle de Facturas</h3>
       <div style="overflow-x:auto;">
         <table class="sc-table">
-          <thead>
-            <tr>
-              <th>Factura</th><th>Cliente</th><th>Ejecutivo</th><th>Fecha</th>
-              <th>Status Operativo</th><th>Compra Status</th><th>Total</th>
-              <th>Gasto Entrega</th><th>Precio Producto</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Factura</th><th>Cliente</th><th>Ejecutivo</th><th>Delivery Date</th><th>Status Operativo</th><th>Total</th><th>Gasto Entrega</th><th>Modelos</th></tr></thead>
           <tbody id="tblFacturas"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Resumen: Entregado por mes/ejecutivo/modelo -->
-    <div class="grid cols-2" style="margin-bottom:16px;">
+    <!-- Resumen Ejecutivo / Modelo / Mes -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
       <div class="card">
         <h3>Entregado por Ejecutivo</h3>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead><tr><th>Ejecutivo</th><th>Cantidad</th><th>Monto</th></tr></thead>
-            <tbody id="tblEjecutivos"></tbody>
-          </table>
-        </div>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Ejecutivo</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblEjecutivos"></tbody>
+        </table></div>
       </div>
       <div class="card">
         <h3>Entregado por Modelo</h3>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead><tr><th>Modelo</th><th>Cantidad</th><th>Monto</th></tr></thead>
-            <tbody id="tblModelos"></tbody>
-          </table>
-        </div>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Modelo</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblModelos"></tbody>
+        </table></div>
       </div>
-    </div>
-
-    <!-- Resumen por Categoría -->
-    <div class="card">
-      <h3>Resumen por Mes</h3>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead><tr><th>Mes</th><th>Cantidad</th><th>Monto</th></tr></thead>
+      <div class="card">
+        <h3>Entregado por Mes</h3>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Mes</th><th>Cant</th><th>Monto</th></tr></thead>
           <tbody id="tblMeses"></tbody>
-        </table>
+        </table></div>
       </div>
     </div>
 
@@ -486,220 +496,161 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-// ================== DATOS FACTURACIÓN (estructura según Odoo / server.py) ==================
-// x_status_operativos: 6=Entregado, 4=Aprobado, 0=Sin asignar, 8=Cancelación, 10/12=Congelado
-// x_status_compra: 1=Cotización, 4=Entrega Realizada, False=Sin asignar
-// user_id = ejecutivo | commitment_date = fecha | amount_total = total | gasto_admin = gasto de entrega
+// ================== FACTURACIÓN (Odoo Ventas / sale.order) ==================
+// x_status_operativos: 6=Entregado, 4=Aprobado, 0=Ninguno(gasto entrega), 8=Cancelado, 10/12=Congelado
+// Se agrupa por status operativo y por delivery date (fecha de entrega); por mes y por ejecutivo.
+// NOTA: datos representativos; reemplazar por get_facturacion_odoo() con credenciales de Odoo.
+try {
+  const datosFacturacion = {
+    facturas: [
+      // --- Julio 2026: 7 entregados (status 6) ---
+      { nombre:"LBM-FAC-2026-001", cliente:"CLIENTE A", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-03", statusOperativo:"6", total:28500, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-002", cliente:"CLIENTE B", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-05", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-003", cliente:"CLIENTE C", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-08", statusOperativo:"6", total:31900, gastoAdmin:1800, modelos:["HONDA WR-V 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-004", cliente:"CLIENTE D", ejecutivo:"CARLOS M.", deliveryDate:"2026-07-12", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-005", cliente:"CLIENTE E", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-18", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-006", cliente:"CLIENTE F", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-22", statusOperativo:"6", total:42000, gastoAdmin:2500, modelos:["HONDA CR-V 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-007", cliente:"CLIENTE G", ejecutivo:"CARLOS M.", deliveryDate:"2026-07-27", statusOperativo:"6", total:31900, gastoAdmin:1800, modelos:["HONDA WR-V 1.5L A/T EXL 2026"] },
+      // --- Junio 2026: 3 entregados ---
+      { nombre:"LBM-FAC-2026-008", cliente:"CLIENTE H", ejecutivo:"MIGUEL R.", deliveryDate:"2026-06-20", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-009", cliente:"CLIENTE I", ejecutivo:"LUIS F.",   deliveryDate:"2026-06-22", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-010", cliente:"CLIENTE J", ejecutivo:"CARLOS M.", deliveryDate:"2026-06-28", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
+      // --- Aprobados (no entregados) ---
+      { nombre:"LBM-FAC-2026-011", cliente:"CLIENTE K", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-15", statusOperativo:"4", total:35600, gastoAdmin:0, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
+      { nombre:"LBM-FAC-2026-012", cliente:"CLIENTE L", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-20", statusOperativo:"4", total:27900, gastoAdmin:0, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
+      // --- Ninguno = Gasto de Entrega ---
+      { nombre:"LBM-GE-2026-013", cliente:"GASTO ENTREGA", ejecutivo:"—", deliveryDate:"2026-07-10", statusOperativo:"0", total:5000, gastoAdmin:5000, modelos:[] },
+      { nombre:"LBM-GE-2026-014", cliente:"GASTO ENTREGA", ejecutivo:"—", deliveryDate:"2026-07-25", statusOperativo:"0", total:3500, gastoAdmin:3500, modelos:[] },
+      // --- Cancelado ---
+      { nombre:"LBM-FAC-2026-015", cliente:"CLIENTE M", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-14", statusOperativo:"8", total:0, gastoAdmin:0, modelos:["HONDA CR-V 1.5L A/T EXL 2026"] },
+    ],
+    statusLabels: { '6':'Entregado','4':'Aprobado','0':'Ninguno (Gasto Entrega)','8':'Cancelado','10':'Congelado','12':'Congelado' },
+    statusColors: { '6':'#1e9e5a','4':'#f59e0b','0':'#e11d48','8':'#64748b','10':'#8b5cf6','12':'#8b5cf6' },
+  };
 
-const datosFacturacion = {
-  facturas: [
-    {
-      nombre: "LBM-FAC-2026-001", cliente: "CLIENTE A", ejecutivo: "MIGUEL R.",
-      fecha: "2026-07-05", statusOperativo: "6", statusCompra: "4",
-      total: 28500.0, gastoAdmin: 1500.0, precioProducto: 27000.0,
-      modelos: ["HONDA CITY 1.5L A/T EXL 2026"], cantidad: 1,
-    },
-    {
-      nombre: "LBM-FAC-2026-002", cliente: "CLIENTE B", ejecutivo: "LUIS F.",
-      fecha: "2026-07-10", statusOperativo: "4", statusCompra: "4",
-      total: 35600.0, gastoAdmin: 2000.0, precioProducto: 33600.0,
-      modelos: ["HONDA HR-V 1.5L A/T EXL 2026"], cantidad: 1,
-    },
-    {
-      nombre: "LBM-FAC-2026-003", cliente: "CLIENTE C", ejecutivo: "MIGUEL R.",
-      fecha: "2026-07-15", statusOperativo: "6", statusCompra: "4",
-      total: 31900.0, gastoAdmin: 1800.0, precioProducto: 30100.0,
-      modelos: ["HONDA WR-V 1.5L A/T EXL 2026"], cantidad: 1,
-    },
-    {
-      nombre: "LBM-FAC-2026-004", cliente: "CLIENTE D", ejecutivo: "CARLOS M.",
-      fecha: "2026-07-20", statusOperativo: "0", statusCompra: "1",
-      total: 27900.0, gastoAdmin: 0.0, precioProducto: 27900.0,
-      modelos: ["HONDA CITY 1.5L A/T EXL 2026"], cantidad: 1,
-    },
-    {
-      nombre: "LBM-FAC-2026-005", cliente: "CLIENTE E", ejecutivo: "LUIS F.",
-      fecha: "2026-07-25", statusOperativo: "6", statusCompra: "4",
-      total: 71200.0, gastoAdmin: 3500.0, precioProducto: 67700.0,
-      modelos: ["HONDA HR-V 1.5L A/T EXL 2026", "HONDA WR-V 1.5L A/T EXL 2026"], cantidad: 2,
-    },
-    {
-      nombre: "LBM-FAC-2026-006", cliente: "CLIENTE F", ejecutivo: "MIGUEL R.",
-      fecha: "2026-07-28", statusOperativo: "8", statusCompra: "4",
-      total: 0.0, gastoAdmin: 500.0, precioProducto: -500.0,
-      modelos: [], cantidad: 0,
-    },
-  ],
+  const ENTREGADO = '6';
+  const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mesDesdeFecha = (f) => { const [y,m] = f.split('-'); return `${MESES[parseInt(m,10)-1]} ${y}`; };
 
-  statusLabels: {
-    '6': 'Entregado', '4': 'Aprobado', '0': 'Sin asignar',
-    '8': 'Cancelación Total', '10': 'Congelado', '12': 'Congelado',
-  },
-  statusColors: {
-    '6': '#1e9e5a', '4': '#f59e0b', '0': '#6b728e',
-    '8': '#e11d48', '10': '#8b5cf6', '12': '#8b5cf6',
-  },
-};
-
-// Solo se consideran ENTREGADOS (status operativo = '6') para cantidad y monto
-const ENTREGADO = '6';
-const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-function mesDesdeFecha(fecha){
-  const [y, m] = fecha.split('-');
-  return `${MESES[parseInt(m,10)-1]} ${y}`;
-}
-
-function calcularEntregados() {
-  const porMes = {}, porEjecutivo = {}, porModelo = {};
-  let totalCantidad = 0, totalMonto = 0, totalFne = 0, totalAdmin = 0;
+  const porStatus = {}, porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
+  let totalEntregadas = 0, montoEntregado = 0, gastoEntrega = 0, totalFacturado = 0;
 
   datosFacturacion.facturas.forEach(f => {
-    totalAdmin += f.gastoAdmin;
     const st = f.statusOperativo;
-
+    totalFacturado += f.total;
+    if (!porStatus[st]) porStatus[st] = { cant:0, monto:0 };
+    porStatus[st].cant += 1; porStatus[st].monto += f.total;
+    if (st === '0') gastoEntrega += f.total;
     if (st === ENTREGADO) {
-      const mes = mesDesdeFecha(f.fecha);
-      const cant = f.cantidad;
+      const mes = mesDesdeFecha(f.deliveryDate);
+      const cant = f.modelos.length || 1;
       const monto = f.total;
-      const n = f.modelos.length || 1;
-
-      totalCantidad += cant;
-      totalMonto += monto;
-
-      if (!porMes[mes]) porMes[mes] = { cantidad:0, monto:0 };
-      porMes[mes].cantidad += cant;
-      porMes[mes].monto += monto;
-
-      if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cantidad:0, monto:0 };
-      porEjecutivo[f.ejecutivo].cantidad += cant;
-      porEjecutivo[f.ejecutivo].monto += monto;
-
+      totalEntregadas += cant; montoEntregado += monto;
+      if (!porMes[mes]) porMes[mes] = { cant:0, monto:0 };
+      porMes[mes].cant += cant; porMes[mes].monto += monto;
+      if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
+      porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
       f.modelos.forEach(m => {
-        if (!porModelo[m]) porModelo[m] = { cantidad:0, monto:0 };
-        porModelo[m].cantidad += cant / n;
-        porModelo[m].monto += monto / n;
+        if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
+        porModelo[m].cant += cant; porModelo[m].monto += monto;
+        if (!porMesModelo[mes]) porMesModelo[mes] = {};
+        if (!porMesModelo[mes][m]) porMesModelo[mes][m] = { cant:0, monto:0 };
+        porMesModelo[mes][m].cant += cant; porMesModelo[mes][m].monto += monto;
       });
-    } else {
-      totalFne += f.total;
     }
   });
 
-  return { porMes, porEjecutivo, porModelo, totalCantidad, totalMonto, totalFne, totalAdmin };
-}
+  // KPIs
+  const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  setKpi('kpiEntregadas', totalEntregadas);
+  setKpi('kpiMontoEntregado', fmt(montoEntregado));
+  setKpi('kpiGastoEntrega', fmt(gastoEntrega));
+  setKpi('kpiTotalFacturado', fmt(totalFacturado));
 
-const ent = calcularEntregados();
+  // Tabla detalle
+  const tFact = document.getElementById('tblFacturas');
+  if (tFact) tFact.innerHTML = datosFacturacion.facturas.map(f => {
+    const lbl = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
+    const col = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
+    return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
+      <td>${f.deliveryDate}</td><td><span style="color:${col};font-weight:700">${lbl}</span></td>
+      <td><b>${fmt(f.total)}</b></td><td>${fmt(f.gastoAdmin)}</td>
+      <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
+  }).join('');
 
-// KPIs
-document.getElementById('kpiTotalEntregadoCantidad').textContent = ent.totalCantidad;
-document.getElementById('kpiTotalEntregadoMonto').textContent = fmt(ent.totalMonto);
-document.getElementById('kpiTotalFne').textContent = fmt(ent.totalFne);
-document.getElementById('kpiTotalAdministrativo').textContent = fmt(ent.totalAdmin);
+  const tabla = (id, rows, totalRow) => {
+    const el = document.getElementById(id); if (!el) return;
+    el.innerHTML = rows.join('') + (totalRow || '');
+  };
+  tabla('tblEjecutivos',
+    Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
+    `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
+  tabla('tblModelos',
+    Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
+  tabla('tblMeses',
+    Object.entries(porMes).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
+    `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
+  tabla('tblStatus',
+    Object.entries(porStatus).map(([k,d])=>`<tr><td><span style="color:${datosFacturacion.statusColors[k]||'#6b728e'};font-weight:700">${datosFacturacion.statusLabels[k]||k}</span></td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
 
-// Tabla detalle de facturas
-document.getElementById('tblFacturas').innerHTML = datosFacturacion.facturas.map(f => {
-  const stLabel = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
-  const stColor = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
-  const compraLabel = f.statusCompra === '4' ? 'Entrega Realizada' : f.statusCompra || 'Sin asignar';
-  return `
-    <tr>
-      <td><b>${f.nombre}</b></td>
-      <td>${f.cliente}</td>
-      <td>${f.ejecutivo}</td>
-      <td>${f.fecha}</td>
-      <td><span style="color:${stColor};font-weight:700">${stLabel}</span></td>
-      <td>${compraLabel}</td>
-      <td><b>${fmt(f.total)}</b></td>
-      <td>${fmt(f.gastoAdmin)}</td>
-      <td>${fmt(f.precioProducto)}</td>
-    </tr>
-  `;
-}).join('');
-
-// Tabla: Entregado por Ejecutivo
-document.getElementById('tblEjecutivos').innerHTML = Object.entries(ent.porEjecutivo)
-  .sort((a,b) => b[1].monto - a[1].monto)
-  .map(([k, d]) => `<tr><td>${k}</td><td><b>${d.cantidad}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`)
-  .join('') + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${ent.totalCantidad}</td><td>${fmt(ent.totalMonto)}</td></tr>`;
-
-// Tabla: Entregado por Modelo
-document.getElementById('tblModelos').innerHTML = Object.entries(ent.porModelo)
-  .sort((a,b) => b[1].monto - a[1].monto)
-  .map(([k, d]) => `<tr><td>${k.replace('HONDA ','')}</td><td><b>${Math.round(d.cantidad)}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`)
-  .join('');
-
-// Tabla: Entregado por Mes
-document.getElementById('tblMeses').innerHTML = Object.entries(ent.porMes)
-  .sort((a,b) => a[0].localeCompare(b[0]))
-  .map(([k, d]) => `<tr><td>${k}</td><td><b>${d.cantidad}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`)
-  .join('') + `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${ent.totalCantidad}</td><td>${fmt(ent.totalMonto)}</td></tr>`;
-
-// ---------- Gráfico auxiliar: barras agrupadas cantidad + monto (doble eje) ----------
-function graficoDobleEje(canvasId, datos) {
-  const labels = Object.keys(datos);
-  const cantidades = labels.map(l => Math.round(datos[l].cantidad));
-  const montos = labels.map(l => datos[l].monto);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Cantidad (unidades)',
-          data: cantidades,
-          backgroundColor: 'rgba(54, 162, 235, 0.6)',
-          borderColor: '#1e9e5a',
-          borderWidth: 1,
-          yAxisID: 'y',
-        },
-        {
-          label: 'Monto ($)',
-          data: montos,
-          backgroundColor: 'rgba(255, 99, 132, 0.6)',
-          borderColor: '#cc0000',
-          borderWidth: 1,
-          yAxisID: 'y1',
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: true },
-        tooltip: {
-          callbacks: {
-            label: function(c) {
-              return c.dataset.label === 'Cantidad (unidades)'
-                ? `${c.dataset.label}: ${c.parsed.y}`
-                : `${c.dataset.label}: ${fmt(c.parsed.y)}`;
-            }
-          }
-        }
-      },
-      scales: {
-        y: {
-          type: 'linear', display: true, position: 'left',
-          title: { display: true, text: 'Cantidad' },
-          ticks: { precision: 0 },
-          beginAtZero: true,
-        },
-        y1: {
-          type: 'linear', display: true, position: 'right',
-          title: { display: true, text: 'Monto' },
-          grid: { drawOnChartArea: false },
-          ticks: { callback: v => fmt(v) },
-          beginAtZero: true,
-        }
-      }
-    }
+  // Modelo más vendido por mes
+  const mesesOrden = Object.keys(porMesModelo).sort((a,b)=>a.localeCompare(b));
+  const topModelo = {};
+  mesesOrden.forEach(m => {
+    let best = null, bv = -1;
+    Object.entries(porMesModelo[m]).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; topModelo[m] = { modelo: best, cant: d.cant, monto: d.monto }; } });
   });
-}
+  const tTop = document.getElementById('tblTopModelo');
+  if (tTop) tTop.innerHTML = mesesOrden.map(m => { const t = topModelo[m]; return `<tr><td>${m}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
 
-graficoDobleEje('chartMes', ent.porMes);
-graficoDobleEje('chartEjecutivo', ent.porEjecutivo);
-graficoDobleEje('chartModelo', ent.porModelo);
+  // ---- Gráficos (protegidos contra fallo de CDN / canvas inexistente) ----
+  function graficoDobleEje(canvasId, datos) {
+    const el = document.getElementById(canvasId);
+    if (!el || typeof Chart === 'undefined') return;
+    const labels = Object.keys(datos);
+    const cants = labels.map(l => datos[l].cant);
+    const montos = labels.map(l => datos[l].monto);
+    new Chart(el.getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label:'Cantidad', data:cants, backgroundColor:'rgba(54,162,235,0.6)', borderColor:'#1e9e5a', borderWidth:1, yAxisID:'y' },
+        { label:'Monto ($)', data:montos, backgroundColor:'rgba(255,99,132,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
+      ]},
+      options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+        plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
+        scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
+                  y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
+    });
+  }
+  graficoDobleEje('chartMes', porMes);
+  graficoDobleEje('chartEjecutivo', porEjecutivo);
+  graficoDobleEje('chartModelo', porModelo);
+
+  const elTop = document.getElementById('chartTopModelo');
+  if (elTop && typeof Chart !== 'undefined') {
+    new Chart(elTop.getContext('2d'), {
+      type: 'bar',
+      data: { labels: mesesOrden.map(m => `${m}\n${topModelo[m].modelo.replace('HONDA ','')}`),
+        datasets: [{ label:'Unidades top', data: mesesOrden.map(m => topModelo[m].cant), backgroundColor:'#1e9e5a', borderColor:'#166534', borderWidth:1 }] },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{display:false}, tooltip:{callbacks:{label:c => `${topModelo[mesesOrden[c.dataIndex]].modelo.replace('HONDA ','')}: ${c.parsed.y} unidades`}} },
+        scales: { y:{beginAtZero:true, ticks:{precision:0}} } }
+    });
+  }
+
+  const elSt = document.getElementById('chartStatus');
+  if (elSt && typeof Chart !== 'undefined') {
+    const ks = Object.keys(porStatus);
+    new Chart(elSt.getContext('2d'), {
+      type: 'bar',
+      data: { labels: ks.map(k => datosFacturacion.statusLabels[k] || k),
+        datasets: [{ label:'Monto ($)', data: ks.map(k => porStatus[k].monto), backgroundColor: ks.map(k => datosFacturacion.statusColors[k] || '#6b728e') }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => `${fmt(c.parsed.y)} · ${porStatus[ks[c.dataIndex]].cant} facturas`}}}, scales:{y:{beginAtZero:true, ticks:{callback:v=>fmt(v)}}} }
+    });
+  }
+} catch (e) {
+  console.error('Error en el módulo Facturación:', e);
+}
 
 // ================== STATUS COMERCIAL ==================
 const statusComercial = [{"id":4432,"orden":"LBM-ORDEN-00070","cliente":"ALBA SALAS","cid":56043,"fecha":"2026-08-13","modelo":"HONDA WR-V 1.5L A/T EXL 2026","color":"Azul Nordico","ref":"WR-VEXL26-G553P","qty":1.0,"disp":0.0,"ok":false},{"id":4437,"orden":"LBM-ORDEN-00074","cliente":"ALEJANDRO RAFAEL LEZAMA SÁNCHEZ","cid":56322,"fecha":"2026-08-20","modelo":"HONDA WR-V 1.5L A/T EXL 2026","color":"Plata Metalico","ref":"WR-VEXL26-NH-830M","qty":1.0,"disp":0.0,"ok":false},{"id":4439,"orden":"LBM-ORDEN-00076","cliente":"GERALDINE CAROLINA RINCON AÑEZ","cid":56379,"fecha":"2026-08-20","modelo":"HONDA HR-V 1.5L A/T EXL 2026","color":"Blanco Perlado","ref":"HR-VEXL26-NH883P","qty":1.0,"disp":0.0,"ok":false}];
