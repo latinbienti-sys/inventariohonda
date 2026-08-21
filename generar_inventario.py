@@ -374,7 +374,131 @@ def get_status_comercial():
     return out
 
 
-def build_html(units, status_comercial):
+# ── Facturación (Odoo módulo Ventas / sale.order) ───────────────────────
+def get_facturacion():
+    """Facturación desde Odoo (módulo Ventas) — SOLO LECTURA.
+
+    Replica la lógica del favorito FACTURACION MENSUAL de Odoo:
+      - sale.order filtrado por x_status_compra='4' (Entrega Realizada) y
+        commitment_date (fecha de entrega) en un rango amplio.
+      - ejecutivo = user_id (vendedor).
+      - gasto de entrega = líneas cuyo producto contiene 'gasto administrativo'
+        o 'gestión de cobranza'.
+    Devuelve lista de dicts en el formato que consume datosFacturacion.facturas
+    en el HTML: nombre, cliente, ejecutivo, deliveryDate, statusOperativo,
+    total, gastoAdmin, modelos.
+    """
+    ST_LABELS = {'6': 'Entregado', '8': 'Cancelación Total', '4': 'Aprobado',
+                 '10': 'Congelado', '12': 'Congelado', '0': 'Sin asignar'}
+
+    # Asegurar sesión (get_data ya autentica, pero nos protegemos si se llama solo)
+    try:
+        auth = rpc(BASE + "/web/session/authenticate", "call", {
+            "db": DB, "login": USER, "password": PWD
+        })
+        if not auth.get("result", {}).get("uid"):
+            raise RuntimeError("Fallo de autenticacion en Odoo (Facturacion)")
+    except Exception as e:
+        print(f"FACTURACION: error de autenticacion: {e}")
+        return []
+
+    # Ventana: 2025-01-01 04:00 (Caracas UTC-4) hasta 2027-01-01 04:00
+    so_domain = [
+        ['x_status_compra', '=', '4'],
+        ['commitment_date', '>=', '2025-01-01 04:00:00'],
+        ['commitment_date', '<', '2027-01-01 04:00:00'],
+    ]
+    try:
+        so_ids = call_kw('sale.order', 'search', [so_domain])
+    except Exception as e:
+        print(f"FACTURACION: error buscando sale.order: {e}")
+        return []
+
+    if not so_ids:
+        return []
+
+    # Leer órdenes en lotes
+    ordenes = []
+    for i in range(0, len(so_ids), 300):
+        batch = so_ids[i:i+300]
+        recs = call_kw('sale.order', 'read', [batch, [
+            'id', 'name', 'partner_id', 'commitment_date',
+            'amount_total', 'amount_untaxed',
+            'user_id', 'team_id', 'x_status_operativos', 'x_status_compra',
+            'order_line',
+        ]])
+        if recs:
+            ordenes.extend(recs)
+
+    # Recolectar líneas de orden
+    line_ids = []
+    for so in ordenes:
+        for lid in (so.get('order_line') or []):
+            line_ids.append(lid)
+
+    lineas = []
+    if line_ids:
+        for i in range(0, len(line_ids), 300):
+            batch = line_ids[i:i+300]
+            recs = call_kw('sale.order.line', 'read', [batch, [
+                'id', 'product_id', 'product_uom_qty', 'price_unit',
+                'price_subtotal', 'price_total', 'discount', 'purchase_price',
+            ]])
+            if recs:
+                lineas.extend(recs)
+
+    # Mapa línea -> orden
+    lineas_por_orden = {}
+    for lr in lineas:
+        lid = lr['id']
+        for so in ordenes:
+            if lid in (so.get('order_line') or []):
+                lineas_por_orden.setdefault(so['id'], []).append(lr)
+                break
+
+    facturas = []
+    for so in ordenes:
+        so_id = so['id']
+        inv_name = so.get('name', '')
+        partner = so.get('partner_id')
+        partner_name = partner[1] if isinstance(partner, list) and len(partner) > 1 else 'Desconocido'
+        fecha = str(so.get('commitment_date') or '')[:10]
+
+        uid = so.get('user_id')
+        ej_name = uid[1] if isinstance(uid, list) and len(uid) > 1 else 'Sin asignar'
+
+        raw_st = so.get('x_status_operativos')
+        st_str = str(raw_st) if raw_st is not None else ''
+
+        total = float(so.get('amount_total') or 0)
+
+        gasto_admin = 0.0
+        modelos = []
+        for lr in lineas_por_orden.get(so_id, []):
+            pid = lr.get('product_id')
+            pname = pid[1] if isinstance(pid, list) and len(pid) > 1 else 'Producto'
+            pu = float(lr.get('price_subtotal') or 0)
+            is_admin = 'gasto administrativo' in pname.lower() or 'gestion de cobranza' in pname.lower()
+            if is_admin:
+                gasto_admin += pu
+            else:
+                modelos.append(pname)
+
+        facturas.append({
+            'nombre': inv_name,
+            'cliente': partner_name,
+            'ejecutivo': ej_name,
+            'deliveryDate': fecha,
+            'statusOperativo': st_str,
+            'total': round(total, 2),
+            'gastoAdmin': round(gasto_admin, 2),
+            'modelos': modelos,
+        })
+
+    return facturas
+
+
+def build_html(units, status_comercial, facturacion=None):
     total = len(units)
     por_alma = {}
     for u in units:
@@ -392,6 +516,7 @@ def build_html(units, status_comercial):
     )
 
     status_js = json.dumps(status_comercial, ensure_ascii=False, separators=(",", ":"))
+    fact_js = json.dumps(facturacion or [], ensure_ascii=False, separators=(",", ":"))
 
     # KPIs de Status Comercial
     n_ordenes = len({r["id"] for r in status_comercial})
@@ -416,6 +541,7 @@ def build_html(units, status_comercial):
     html = html.replace("__CURRENCY_DEC__", str(CURRENCY_DECIMALS))
     html = html.replace("__UNIDADES__", unidades_js)
     html = html.replace("__STATUS_COMERCIAL__", status_js)
+    html = html.replace("__FACTURACION_JSON__", fact_js)
     html = html.replace("__ODOO_BASE__", BASE)
     html = html.replace("__SC_ORDENES__", str(n_ordenes))
     html = html.replace("__SC_UNIDADES__", str(n_unidades))
@@ -958,31 +1084,10 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 // ================== FACTURACIÓN (Odoo Ventas / sale.order) ==================
 // x_status_operativos: 6=Entregado, 4=Aprobado, 0=Ninguno(gasto entrega), 8=Cancelado, 10/12=Congelado
 // Se agrupa por status operativo y por delivery date (fecha de entrega); por mes y por ejecutivo.
-// NOTA: datos representativos; reemplazar por get_facturacion_odoo() con credenciales de Odoo.
+// Datos REALES inyectados desde Odoo (módulo Ventas / sale.order) vía generar_inventario.py.
 try {
   const datosFacturacion = {
-    facturas: [
-      // --- Julio 2026: 7 entregados (status 6) ---
-      { nombre:"LBM-FAC-2026-001", cliente:"CLIENTE A", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-03", statusOperativo:"6", total:28500, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-002", cliente:"CLIENTE B", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-05", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-003", cliente:"CLIENTE C", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-08", statusOperativo:"6", total:31900, gastoAdmin:1800, modelos:["HONDA WR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-004", cliente:"CLIENTE D", ejecutivo:"CARLOS M.", deliveryDate:"2026-07-12", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-005", cliente:"CLIENTE E", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-18", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-006", cliente:"CLIENTE F", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-22", statusOperativo:"6", total:42000, gastoAdmin:2500, modelos:["HONDA CR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-007", cliente:"CLIENTE G", ejecutivo:"CARLOS M.", deliveryDate:"2026-07-27", statusOperativo:"6", total:31900, gastoAdmin:1800, modelos:["HONDA WR-V 1.5L A/T EXL 2026"] },
-      // --- Junio 2026: 3 entregados ---
-      { nombre:"LBM-FAC-2026-008", cliente:"CLIENTE H", ejecutivo:"MIGUEL R.", deliveryDate:"2026-06-20", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-009", cliente:"CLIENTE I", ejecutivo:"LUIS F.",   deliveryDate:"2026-06-22", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-010", cliente:"CLIENTE J", ejecutivo:"CARLOS M.", deliveryDate:"2026-06-28", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      // --- Aprobados (no entregados) ---
-      { nombre:"LBM-FAC-2026-011", cliente:"CLIENTE K", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-15", statusOperativo:"4", total:35600, gastoAdmin:0, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-012", cliente:"CLIENTE L", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-20", statusOperativo:"4", total:27900, gastoAdmin:0, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      // --- Ninguno = Gasto de Entrega ---
-      { nombre:"LBM-GE-2026-013", cliente:"GASTO ENTREGA", ejecutivo:"—", deliveryDate:"2026-07-10", statusOperativo:"0", total:5000, gastoAdmin:5000, modelos:[] },
-      { nombre:"LBM-GE-2026-014", cliente:"GASTO ENTREGA", ejecutivo:"—", deliveryDate:"2026-07-25", statusOperativo:"0", total:3500, gastoAdmin:3500, modelos:[] },
-      // --- Cancelado ---
-      { nombre:"LBM-FAC-2026-015", cliente:"CLIENTE M", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-14", statusOperativo:"8", total:0, gastoAdmin:0, modelos:["HONDA CR-V 1.5L A/T EXL 2026"] },
-    ],
+    facturas: __FACTURACION_JSON__,
     statusLabels: { '6':'Entregado','4':'Aprobado','0':'Ninguno (Gasto Entrega)','8':'Cancelado','10':'Congelado','12':'Congelado' },
     statusColors: { '6':'#1e9e5a','4':'#f59e0b','0':'#e11d48','8':'#64748b','10':'#8b5cf6','12':'#8b5cf6' },
   };
@@ -1173,7 +1278,10 @@ def main():
         marca = "TENEMOS" if r["ok"] else "NO TENEMOS"
         print(f"  {r['fecha']} | {r['orden']:8s} | {r['cliente'][:22]:22s} | {r['modelo']:34s} | {r['color']:15s} | qty={r['qty']} | disp={r['disp']} | {marca}")
 
-    html = build_html(units, status_comercial)
+    print("Consultando Facturación (Odoo módulo Ventas)...")
+    facturacion = get_facturacion()
+    print(f"Facturas (entregas) cargadas: {len(facturacion)}")
+    html = build_html(units, status_comercial, facturacion)
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
     with open("Inventario_Carros_Honda.html", "w", encoding="utf-8") as f:

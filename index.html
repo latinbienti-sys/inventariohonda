@@ -499,31 +499,10 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 // ================== FACTURACIÓN (Odoo Ventas / sale.order) ==================
 // x_status_operativos: 6=Entregado, 4=Aprobado, 0=Ninguno(gasto entrega), 8=Cancelado, 10/12=Congelado
 // Se agrupa por status operativo y por delivery date (fecha de entrega); por mes y por ejecutivo.
-// NOTA: datos representativos; reemplazar por get_facturacion_odoo() con credenciales de Odoo.
+// Datos REALES se inyectan desde Odoo (módulo Ventas) vía generar_inventario.py (se regenera cada hora).
 try {
   const datosFacturacion = {
-    facturas: [
-      // --- Julio 2026: 7 entregados (status 6) ---
-      { nombre:"LBM-FAC-2026-001", cliente:"CLIENTE A", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-03", statusOperativo:"6", total:28500, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-002", cliente:"CLIENTE B", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-05", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-003", cliente:"CLIENTE C", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-08", statusOperativo:"6", total:31900, gastoAdmin:1800, modelos:["HONDA WR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-004", cliente:"CLIENTE D", ejecutivo:"CARLOS M.", deliveryDate:"2026-07-12", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-005", cliente:"CLIENTE E", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-18", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-006", cliente:"CLIENTE F", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-22", statusOperativo:"6", total:42000, gastoAdmin:2500, modelos:["HONDA CR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-007", cliente:"CLIENTE G", ejecutivo:"CARLOS M.", deliveryDate:"2026-07-27", statusOperativo:"6", total:31900, gastoAdmin:1800, modelos:["HONDA WR-V 1.5L A/T EXL 2026"] },
-      // --- Junio 2026: 3 entregados ---
-      { nombre:"LBM-FAC-2026-008", cliente:"CLIENTE H", ejecutivo:"MIGUEL R.", deliveryDate:"2026-06-20", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-009", cliente:"CLIENTE I", ejecutivo:"LUIS F.",   deliveryDate:"2026-06-22", statusOperativo:"6", total:35600, gastoAdmin:2000, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-010", cliente:"CLIENTE J", ejecutivo:"CARLOS M.", deliveryDate:"2026-06-28", statusOperativo:"6", total:27900, gastoAdmin:1500, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      // --- Aprobados (no entregados) ---
-      { nombre:"LBM-FAC-2026-011", cliente:"CLIENTE K", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-15", statusOperativo:"4", total:35600, gastoAdmin:0, modelos:["HONDA HR-V 1.5L A/T EXL 2026"] },
-      { nombre:"LBM-FAC-2026-012", cliente:"CLIENTE L", ejecutivo:"MIGUEL R.", deliveryDate:"2026-07-20", statusOperativo:"4", total:27900, gastoAdmin:0, modelos:["HONDA CITY 1.5L A/T EXL 2026"] },
-      // --- Ninguno = Gasto de Entrega ---
-      { nombre:"LBM-GE-2026-013", cliente:"GASTO ENTREGA", ejecutivo:"—", deliveryDate:"2026-07-10", statusOperativo:"0", total:5000, gastoAdmin:5000, modelos:[] },
-      { nombre:"LBM-GE-2026-014", cliente:"GASTO ENTREGA", ejecutivo:"—", deliveryDate:"2026-07-25", statusOperativo:"0", total:3500, gastoAdmin:3500, modelos:[] },
-      // --- Cancelado ---
-      { nombre:"LBM-FAC-2026-015", cliente:"CLIENTE M", ejecutivo:"LUIS F.",   deliveryDate:"2026-07-14", statusOperativo:"8", total:0, gastoAdmin:0, modelos:["HONDA CR-V 1.5L A/T EXL 2026"] },
-    ],
+    facturas: [],
     statusLabels: { '6':'Entregado','4':'Aprobado','0':'Ninguno (Gasto Entrega)','8':'Cancelado','10':'Congelado','12':'Congelado' },
     statusColors: { '6':'#1e9e5a','4':'#f59e0b','0':'#e11d48','8':'#64748b','10':'#8b5cf6','12':'#8b5cf6' },
   };
