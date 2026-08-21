@@ -54,16 +54,6 @@ def call_kw(model, method, args=None, kwargs=None):
     return res["result"]
 
 
-# Respaldo para Facturación: Odoo de Facturación (latinbien.com / erp_production)
-# por si el Odoo del inventario no expone los campos de facturación.
-# Se prefiere el Odoo del inventario (latinbienmotors.com, env ODOO_USER/PASSWORD);
-# este respaldo solo se usa si aquel no devuelve datos.
-FACT_BACKUP_BASE = os.environ.get("ODOO_FACT_BASE", "https://latinbien.com")
-FACT_BACKUP_DB   = os.environ.get("ODOO_FACT_DB", "erp_production")
-FACT_BACKUP_USER = os.environ.get("ODOO_FACT_USER", "latinbienti@latinbien.com")
-FACT_BACKUP_PWD  = os.environ.get("ODOO_FACT_PASSWORD", "z+cakaSe2805*")
-
-
 def strip_accents(s):
     s = unicodedata.normalize("NFD", s)
     return "".join(c for c in s if unicodedata.category(c) != "Mn")
@@ -385,10 +375,10 @@ def get_status_comercial():
 
 
 # ── Facturación (módulo Ventas / sale.order, por status operativo) ──────
-# Fuente principal: Odoo del inventario (latinbienmotors.com). Respaldo:
-# Odoo de Facturación (latinbien.com / erp_production) si el primero no
-# expone los campos. La agrupación es por x_status_operativos (status
-# operativo) y por fecha de entrega (commitment_date / date_order).
+# Fuente ÚNICA: Odoo del inventario (latinbienmotors.com). Solo entregados
+# (x_status_operativos='6'), ventana 2026. La agrupación es por
+# x_status_operativos (status operativo) y por fecha de entrega
+# (commitment_date / date_order). No se consulta ningún otro Odoo.
 def _fact_rpc(opener, url, params):
     payload = {"jsonrpc": "2.0", "method": "call", "params": params, "id": 1}
     data = json.dumps(payload).encode()
@@ -420,7 +410,6 @@ def _fetch_facturacion(base, db, user, pwd):
                         {"attributes": ["type", "store"]})
     date_field = 'commitment_date' if 'commitment_date' in flds else (
         'date_order' if 'date_order' in flds else None)
-    has_status_compra = 'x_status_compra' in flds
     has_status_op = 'x_status_operativos' in flds
 
     # Ventana de fechas: solo 2026 (Caracas UTC-4)
@@ -431,14 +420,10 @@ def _fetch_facturacion(base, db, user, pwd):
             [date_field, '<', '2027-01-01 04:00:00'],
         ]
 
-    # Estrategias de dominio (status), en orden de preferencia.
-    # Primero traemos TODOS los de 2026 y dejamos que el JS agrupe por
-    # status operativo (Entregado, Aprobado, Ninguno/Gasto, Cancelado...).
-    status_strategies = [None]
+    # Estrategias de dominio (status): SOLO entregados por STATUS OPERATIVO.
+    status_strategies = []
     if has_status_op:
         status_strategies.append(['x_status_operativos', '=', '6'])  # Entregado
-    if has_status_compra:
-        status_strategies.append(['x_status_compra', '=', '4'])      # Entrega Realizada
 
     so_ids = []
     for st in status_strategies:
@@ -453,22 +438,22 @@ def _fetch_facturacion(base, db, user, pwd):
             continue
 
     if not so_ids:
-        # Último recurso: búsqueda sin filtros de fecha/status
-        try:
-            so_ids = _fact_call_kw(opener, base, 'sale.order', 'search', [[]], {"limit": 2000})
-        except Exception as e:
-            raise RuntimeError(f"busqueda total fallo: {e}")
+        # Sin entregados (status operativo) en 2026: no traer nada mas.
+        return []
+
+    # Campos a leer (solo los que existen en este Odoo)
+    read_fields = ['id', 'name', 'partner_id', 'amount_total', 'user_id', 'order_line']
+    if date_field:
+        read_fields.append(date_field)
+    if has_status_op:
+        read_fields.append('x_status_operativos')
 
     # Leer órdenes en lotes
     ordenes = []
     for i in range(0, len(so_ids), 300):
         batch = so_ids[i:i + 300]
         try:
-            recs = _fact_call_kw(opener, base, 'sale.order', 'read', [batch, [
-                'id', 'name', 'partner_id', 'commitment_date', 'date_order',
-                'amount_total', 'user_id', 'x_status_operativos', 'x_status_compra',
-                'order_line',
-            ]])
+            recs = _fact_call_kw(opener, base, 'sale.order', 'read', [batch, read_fields])
             if recs:
                 ordenes.extend(recs)
         except Exception as e:
@@ -546,25 +531,15 @@ def _fetch_facturacion(base, db, user, pwd):
 
 
 def get_facturacion():
-    """Facturación desde Odoo (módulo Ventas / sale.order).
-    Fuente principal: latinbienmotors.com (Odoo del inventario).
-    Respaldo silencioso: latinbien.com, solo si la fuente principal viene vacía.
-    """
-    intentos = [
-        ("inventario latinbienmotors.com", BASE, DB, USER, PWD),
-        ("facturacion latinbien.com", FACT_BACKUP_BASE, FACT_BACKUP_DB,
-         FACT_BACKUP_USER, FACT_BACKUP_PWD),
-    ]
-    for nombre, b, d, u, p in intentos:
-        try:
-            fact = _fetch_facturacion(b, d, u, p)
-            if fact:
-                print(f"FACTURACION: fuente={nombre} registros={len(fact)}")
-                return fact
-            print(f"FACTURACION: {nombre} sin registros, probando siguiente fuente.")
-        except Exception as e:
-            print(f"FACTURACION: {nombre} error: {e}")
-    return []
+    """Facturación desde Odoo (módulo Ventas / sale.order) en latinbienmotors.com.
+    Solo entregados (x_status_operativos='6'), ventana 2026."""
+    try:
+        fact = _fetch_facturacion(BASE, DB, USER, PWD)
+        print(f"FACTURACION: latinbienmotors.com registros={len(fact)}")
+        return fact
+    except Exception as e:
+        print(f"FACTURACION: error en latinbienmotors.com: {e}")
+        return []
 
 
 def build_html(units, status_comercial, facturacion=None):
