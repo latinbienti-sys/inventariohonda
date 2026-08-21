@@ -322,7 +322,7 @@
     </div>
   </div><!-- /tabComercial -->
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-21 15:21 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-21 15:37 UTC</span></footer>
 </div>
 
 <script>
@@ -652,6 +652,10 @@ try {
   });
 
   actualizar();  // render inicial (todas las facturas entregadas 2026)
+
+  // Re-render de graficos al abrir la pestaña Facturacion (Chart.js requiere el contenedor visible)
+  const btnFact = document.querySelector('.tab-btn[data-tab="tabFacturacion"]');
+  if (btnFact) btnFact.addEventListener('click', () => { actualizar(); });
 } catch (e) {
   console.error('Error en el módulo Facturación:', e);
 }
