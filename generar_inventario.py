@@ -492,13 +492,10 @@ def _fetch_facturacion(base, db, user, pwd):
                 lpo.setdefault(so['id'], []).append(lr)
                 break
 
-    # Palabras que identifican lineas de gasto/IVA (no son modelos de vehiculo)
-    GASTO_KW = ('gasto', 'administrativo', 'cobranza', 'iva', 'impuesto',
-                'comision', 'comisión', 'flete', 'seguro', 'igtf')
-
-    def es_gasto(nombre):
-        n = (nombre or '').lower()
-        return any(k in n for k in GASTO_KW)
+    # Solo se cuentan las lineas de vehiculo: su nombre debe decir "Honda".
+    # Se excluyen automaticamente IGTF, placa, tramite, IVA, gastos, etc.
+    def es_vehiculo(nombre):
+        return 'honda' in (nombre or '').lower()
 
     facturas = []
     for so in ordenes:
@@ -517,7 +514,7 @@ def _fetch_facturacion(base, db, user, pwd):
         for lr in lpo.get(so_id, []):
             pid = lr.get('product_id')
             pname = pid[1] if isinstance(pid, list) and len(pid) > 1 else 'Producto'
-            if es_gasto(pname):
+            if not es_vehiculo(pname):
                 continue
             qty = float(lr.get('product_uom_qty') or 0.0)
             monto = float(lr.get('price_subtotal') or 0.0)   # subtotal SIN IVA
