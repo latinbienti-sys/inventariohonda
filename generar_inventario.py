@@ -1291,6 +1291,10 @@ try {
   });
 
   actualizar();  // render inicial (todas las facturas entregadas 2026)
+
+  // Re-render de graficos al abrir la pestaña Facturacion (Chart.js requiere el contenedor visible)
+  const btnFact = document.querySelector('.tab-btn[data-tab="tabFacturacion"]');
+  if (btnFact) btnFact.addEventListener('click', () => { actualizar(); });
 } catch (e) {
   console.error('Error en el módulo Facturación:', e);
 }
