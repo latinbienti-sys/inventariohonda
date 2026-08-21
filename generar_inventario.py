@@ -492,6 +492,14 @@ def _fetch_facturacion(base, db, user, pwd):
                 lpo.setdefault(so['id'], []).append(lr)
                 break
 
+    # Palabras que identifican lineas de gasto/IVA (no son modelos de vehiculo)
+    GASTO_KW = ('gasto', 'administrativo', 'cobranza', 'iva', 'impuesto',
+                'comision', 'comisión', 'flete', 'seguro')
+
+    def es_gasto(nombre):
+        n = (nombre or '').lower()
+        return any(k in n for k in GASTO_KW)
+
     facturas = []
     for so in ordenes:
         so_id = so['id']
@@ -503,18 +511,21 @@ def _fetch_facturacion(base, db, user, pwd):
         ej_name = uid[1] if isinstance(uid, list) and len(uid) > 1 else 'Sin asignar'
         raw_st = so.get('x_status_operativos')
         st_str = str(raw_st) if raw_st is not None else ''
-        total = float(so.get('amount_total') or 0)
 
-        gasto_admin = 0.0
         modelos = []
+        lineas = []          # solo lineas de vehiculo (sin gastos ni IVA)
         for lr in lpo.get(so_id, []):
             pid = lr.get('product_id')
             pname = pid[1] if isinstance(pid, list) and len(pid) > 1 else 'Producto'
-            pu = float(lr.get('price_subtotal') or 0)
-            if 'gasto administrativo' in pname.lower() or 'gestion de cobranza' in pname.lower():
-                gasto_admin += pu
-            else:
-                modelos.append(pname)
+            if es_gasto(pname):
+                continue
+            qty = float(lr.get('product_uom_qty') or 0.0)
+            monto = float(lr.get('price_subtotal') or 0.0)   # subtotal SIN IVA
+            lineas.append({'modelo': pname, 'qty': qty, 'monto': monto})
+            modelos.append(pname)
+
+        cantidad = round(sum(l['qty'] for l in lineas), 2)
+        monto = round(sum(l['monto'] for l in lineas), 2)    # vehiculos, sin IVA ni gastos
 
         facturas.append({
             'nombre': inv_name,
@@ -522,9 +533,10 @@ def _fetch_facturacion(base, db, user, pwd):
             'ejecutivo': ej_name,
             'deliveryDate': fecha,
             'statusOperativo': st_str,
-            'total': round(total, 2),
-            'gastoAdmin': round(gasto_admin, 2),
             'modelos': modelos,
+            'lineas': lineas,
+            'cantidad': cantidad,
+            'monto': monto,
         })
 
     return facturas
@@ -849,14 +861,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <!-- KPIs -->
     <div class="kpis" style="margin-bottom:20px;">
       <div class="kpi"><div class="v" id="kpiEntregadas">0</div><div class="l">Unidades Entregadas</div></div>
-      <div class="kpi green"><div class="v" id="kpiMontoEntregado">$ 0.00</div><div class="l">Monto Entregado</div></div>
-      <div class="kpi red"><div class="v" id="kpiGastoEntrega">$ 0.00</div><div class="l">Facturado Gasto de Entrega</div></div>
-      <div class="kpi indigo"><div class="v" id="kpiTotalFacturado">$ 0.00</div><div class="l">Total Facturado</div></div>
+      <div class="kpi green"><div class="v" id="kpiMontoEntregado">$ 0.00</div><div class="l">Monto Entregado (sin IVA)</div></div>
     </div>
 
     <!-- Entregado por Mes -->
     <div class="card" style="margin-bottom:16px;">
-      <h3>Entregado por Mes (delivery date) — Cantidad y Monto</h3>
+      <h3>Entregado por Mes (delivery date) — Unidades y Monto (sin IVA)</h3>
       <div style="position:relative;height:300px;width:100%"><canvas id="chartMes"></canvas></div>
     </div>
 
@@ -872,26 +882,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Modelo más vendido por mes -->
+    <!-- Entregado por Mes y Modelo -->
     <div class="card" style="margin-bottom:16px;">
-      <h3>Modelo más vendido por Mes</h3>
-      <div style="position:relative;height:300px;width:100%"><canvas id="chartTopModelo"></canvas></div>
+      <h3>Entregado por Mes y Modelo — Cantidad de unidades</h3>
+      <div style="position:relative;height:320px;width:100%"><canvas id="chartTopModelo"></canvas></div>
       <div style="overflow-x:auto;margin-top:10px;">
         <table>
           <thead><tr><th>Mes</th><th>Modelo más vendido</th><th>Unidades</th><th>Monto</th></tr></thead>
           <tbody id="tblTopModelo"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Por Status Operativo -->
-    <div class="card" style="margin-bottom:16px;">
-      <h3>Facturación por Status Operativo</h3>
-      <div style="position:relative;height:300px;width:100%"><canvas id="chartStatus"></canvas></div>
-      <div style="overflow-x:auto;margin-top:10px;">
-        <table>
-          <thead><tr><th>Status Operativo</th><th>Cantidad</th><th>Monto</th></tr></thead>
-          <tbody id="tblStatus"></tbody>
         </table>
       </div>
     </div>
@@ -901,7 +899,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <h3>Detalle de Facturas</h3>
       <div style="overflow-x:auto;">
         <table class="sc-table">
-          <thead><tr><th>Factura</th><th>Cliente</th><th>Ejecutivo</th><th>Delivery Date</th><th>Status Operativo</th><th>Total</th><th>Gasto Entrega</th><th>Modelos</th></tr></thead>
+          <thead><tr><th>Factura</th><th>Cliente</th><th>Ejecutivo</th><th>Delivery Date</th><th>Status Operativo</th><th>Cantidad</th><th>Monto (sin IVA)</th><th>Modelos</th></tr></thead>
           <tbody id="tblFacturas"></tbody>
         </table>
       </div>
@@ -1138,124 +1136,120 @@ try {
 
   const ENTREGADO = '6';
   const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const mesDesdeFecha = (f) => { const [y,m] = f.split('-'); return `${MESES[parseInt(m,10)-1]} ${y}`; };
+  const mesKey = (f) => (f && f.deliveryDate ? f.deliveryDate.slice(0,7) : '');
+  const mesLabel = (k) => { const p = (k||'').split('-'); return p.length===2 ? `${MESES[parseInt(p[1],10)-1]} ${p[0]}` : (k||''); };
 
-  const porStatus = {}, porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
-  let totalEntregadas = 0, montoEntregado = 0, gastoEntrega = 0, totalFacturado = 0;
+  const porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
+  let totalEntregadas = 0, montoEntregado = 0;
 
   datosFacturacion.facturas.forEach(f => {
-    const st = f.statusOperativo;
-    totalFacturado += f.total;
-    if (!porStatus[st]) porStatus[st] = { cant:0, monto:0 };
-    porStatus[st].cant += 1; porStatus[st].monto += f.total;
-    if (st === '0') gastoEntrega += f.total;
-    if (st === ENTREGADO) {
-      const mes = mesDesdeFecha(f.deliveryDate);
-      const cant = f.modelos.length || 1;
-      const monto = f.total;
-      totalEntregadas += cant; montoEntregado += monto;
-      if (!porMes[mes]) porMes[mes] = { cant:0, monto:0 };
-      porMes[mes].cant += cant; porMes[mes].monto += monto;
-      if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
-      porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
-      f.modelos.forEach(m => {
-        if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
-        porModelo[m].cant += cant; porModelo[m].monto += monto;
-        if (!porMesModelo[mes]) porMesModelo[mes] = {};
-        if (!porMesModelo[mes][m]) porMesModelo[mes][m] = { cant:0, monto:0 };
-        porMesModelo[mes][m].cant += cant; porMesModelo[mes][m].monto += monto;
-      });
-    }
+    if (f.statusOperativo !== ENTREGADO) return;            // solo entregados
+    const mk = (f.deliveryDate || '').slice(0, 7);          // 'YYYY-MM'
+    const cant = f.cantidad || 0;
+    const monto = f.monto || 0;
+    totalEntregadas += cant; montoEntregado += monto;
+    if (!porMes[mk]) porMes[mk] = { cant:0, monto:0 };
+    porMes[mk].cant += cant; porMes[mk].monto += monto;
+    if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
+    porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
+    (f.lineas || []).forEach(l => {
+      const m = l.modelo;
+      const c = l.qty || 0, mn = l.monto || 0;
+      if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
+      porModelo[m].cant += c; porModelo[m].monto += mn;
+      if (!porMesModelo[mk]) porMesModelo[mk] = {};
+      if (!porMesModelo[mk][m]) porMesModelo[mk][m] = { cant:0, monto:0 };
+      porMesModelo[mk][m].cant += c; porMesModelo[mk][m].monto += mn;
+    });
   });
 
-  // KPIs
+  // KPIs (solo modelos: unidades y monto de vehiculos, sin IVA ni gastos)
   const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   setKpi('kpiEntregadas', totalEntregadas);
   setKpi('kpiMontoEntregado', fmt(montoEntregado));
-  setKpi('kpiGastoEntrega', fmt(gastoEntrega));
-  setKpi('kpiTotalFacturado', fmt(totalFacturado));
 
-  // Tabla detalle
+  // Tabla detalle (solo entregados; monto = vehiculos sin IVA, sin gastos)
   const tFact = document.getElementById('tblFacturas');
-  if (tFact) tFact.innerHTML = datosFacturacion.facturas.map(f => {
-    const lbl = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
-    const col = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
-    return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
-      <td>${f.deliveryDate}</td><td><span style="color:${col};font-weight:700">${lbl}</span></td>
-      <td><b>${fmt(f.total)}</b></td><td>${fmt(f.gastoAdmin)}</td>
-      <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
-  }).join('');
+  if (tFact) tFact.innerHTML = datosFacturacion.facturas
+    .filter(f => f.statusOperativo === ENTREGADO)
+    .map(f => {
+      const lbl = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
+      const col = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
+      return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
+        <td>${f.deliveryDate}</td><td><span style="color:${col};font-weight:700">${lbl}</span></td>
+        <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
+        <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
+    }).join('');
 
   const tabla = (id, rows, totalRow) => {
     const el = document.getElementById(id); if (!el) return;
     el.innerHTML = rows.join('') + (totalRow || '');
   };
+  const mesesOrden = Object.keys(porMes).sort();   // 'YYYY-MM' cronologico
   tabla('tblEjecutivos',
     Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
     `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
   tabla('tblModelos',
     Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
   tabla('tblMeses',
-    Object.entries(porMes).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
+    mesesOrden.map(k=>`<tr><td>${mesLabel(k)}</td><td><b>${porMes[k].cant}</b></td><td><b>${fmt(porMes[k].monto)}</b></td></tr>`),
     `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
-  tabla('tblStatus',
-    Object.entries(porStatus).map(([k,d])=>`<tr><td><span style="color:${datosFacturacion.statusColors[k]||'#6b728e'};font-weight:700">${datosFacturacion.statusLabels[k]||k}</span></td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
 
-  // Modelo más vendido por mes
-  const mesesOrden = Object.keys(porMesModelo).sort((a,b)=>a.localeCompare(b));
+  // Modelo mas vendido por mes (para la tabla)
   const topModelo = {};
-  mesesOrden.forEach(m => {
+  mesesOrden.forEach(mk => {
     let best = null, bv = -1;
-    Object.entries(porMesModelo[m]).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; topModelo[m] = { modelo: best, cant: d.cant, monto: d.monto }; } });
+    Object.entries(porMesModelo[mk] || {}).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; } });
+    if (best !== null) topModelo[mk] = { modelo: best, cant: porMesModelo[mk][best].cant, monto: porMesModelo[mk][best].monto };
   });
   const tTop = document.getElementById('tblTopModelo');
-  if (tTop) tTop.innerHTML = mesesOrden.map(m => { const t = topModelo[m]; return `<tr><td>${m}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
+  if (tTop) tTop.innerHTML = mesesOrden.filter(mk => topModelo[mk]).map(mk => { const t = topModelo[mk]; return `<tr><td>${mesLabel(mk)}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
 
   // ---- Gráficos (protegidos contra fallo de CDN / canvas inexistente) ----
-  function graficoDobleEje(canvasId, datos) {
+  function graficoDobleEje(canvasId, datos, labelFmt) {
     const el = document.getElementById(canvasId);
     if (!el || typeof Chart === 'undefined') return;
-    const labels = Object.keys(datos);
-    const cants = labels.map(l => datos[l].cant);
-    const montos = labels.map(l => datos[l].monto);
+    const keys = Object.keys(datos).sort();
+    const cants = keys.map(l => datos[l].cant);
+    const montos = keys.map(l => datos[l].monto);
+    const labels = keys.map(l => labelFmt ? labelFmt(l) : l);
     new Chart(el.getContext('2d'), {
       type: 'bar',
       data: { labels, datasets: [
-        { label:'Cantidad', data:cants, backgroundColor:'rgba(54,162,235,0.6)', borderColor:'#1e9e5a', borderWidth:1, yAxisID:'y' },
-        { label:'Monto ($)', data:montos, backgroundColor:'rgba(255,99,132,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
+        { label:'Cantidad', data:cants, backgroundColor:'rgba(30,158,90,0.7)', borderColor:'#166534', borderWidth:1, yAxisID:'y' },
+        { label:'Monto (sin IVA)', data:montos, backgroundColor:'rgba(204,0,0,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
       ]},
       options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
         plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
         scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
-                  y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
+                  y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto (sin IVA)'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
     });
   }
-  graficoDobleEje('chartMes', porMes);
+  graficoDobleEje('chartMes', porMes, mesLabel);
   graficoDobleEje('chartEjecutivo', porEjecutivo);
   graficoDobleEje('chartModelo', porModelo);
 
+  // Entregado por Mes y Modelo (barras apiladas por cantidad de unidades)
   const elTop = document.getElementById('chartTopModelo');
   if (elTop && typeof Chart !== 'undefined') {
+    const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
+    const PALETA = ['#cc0000','#1e9e5a','#0f3460','#f59e0b','#536dfe','#8b5cf6','#e11d48','#14b8a6','#db2777','#65a30d','#0891b2','#b45309'];
+    const datasets = modelosOrden.map((m, i) => ({
+      label: m.replace('HONDA ', ''),
+      data: mesesOrden.map(mk => (porMesModelo[mk] && porMesModelo[mk][m]) ? porMesModelo[mk][m].cant : 0),
+      backgroundColor: PALETA[i % PALETA.length],
+      stack: 'cant'
+    }));
     new Chart(elTop.getContext('2d'), {
       type: 'bar',
-      data: { labels: mesesOrden.map(m => `${m}\n${topModelo[m].modelo.replace('HONDA ','')}`),
-        datasets: [{ label:'Unidades top', data: mesesOrden.map(m => topModelo[m].cant), backgroundColor:'#1e9e5a', borderColor:'#166534', borderWidth:1 }] },
+      data: { labels: mesesOrden.map(mesLabel), datasets },
       options: { responsive:true, maintainAspectRatio:false,
-        plugins: { legend:{display:false}, tooltip:{callbacks:{label:c => `${topModelo[mesesOrden[c.dataIndex]].modelo.replace('HONDA ','')}: ${c.parsed.y} unidades`}} },
-        scales: { y:{beginAtZero:true, ticks:{precision:0}} } }
+        plugins: { legend:{display: modelosOrden.length <= 12}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} ud`}} },
+        scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Unidades'}} } }
     });
   }
 
-  const elSt = document.getElementById('chartStatus');
-  if (elSt && typeof Chart !== 'undefined') {
-    const ks = Object.keys(porStatus);
-    new Chart(elSt.getContext('2d'), {
-      type: 'bar',
-      data: { labels: ks.map(k => datosFacturacion.statusLabels[k] || k),
-        datasets: [{ label:'Monto ($)', data: ks.map(k => porStatus[k].monto), backgroundColor: ks.map(k => datosFacturacion.statusColors[k] || '#6b728e') }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => `${fmt(c.parsed.y)} · ${porStatus[ks[c.dataIndex]].cant} facturas`}}}, scales:{y:{beginAtZero:true, ticks:{callback:v=>fmt(v)}}} }
-    });
-  }
+  // (se omite desglose por status operativo: solo se muestran entregados / modelos)
 } catch (e) {
   console.error('Error en el módulo Facturación:', e);
 }
