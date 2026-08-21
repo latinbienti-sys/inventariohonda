@@ -494,7 +494,7 @@ def _fetch_facturacion(base, db, user, pwd):
 
     # Palabras que identifican lineas de gasto/IVA (no son modelos de vehiculo)
     GASTO_KW = ('gasto', 'administrativo', 'cobranza', 'iva', 'impuesto',
-                'comision', 'comisión', 'flete', 'seguro')
+                'comision', 'comisión', 'flete', 'seguro', 'igtf')
 
     def es_gasto(nombre):
         n = (nombre or '').lower()
@@ -864,6 +864,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div class="kpi green"><div class="v" id="kpiMontoEntregado">$ 0.00</div><div class="l">Monto Entregado (sin IVA)</div></div>
     </div>
 
+    <!-- Filtro por fecha de entrega -->
+    <div class="card" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+      <span style="font-weight:700; color:var(--accent);">Filtrar por fecha de entrega:</span>
+      <label>Desde <input type="date" id="fDesde" value="2026-01-01" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <label>Hasta <input type="date" id="fHasta" value="2026-12-31" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <button id="fLimpiar" style="padding:6px 14px; border:none; border-radius:8px; background:var(--honda-red); color:#fff; font-weight:700; cursor:pointer;">Limpiar</button>
+    </div>
+
     <!-- Entregado por Mes -->
     <div class="card" style="margin-bottom:16px;">
       <h3>Entregado por Mes (delivery date) — Unidades y Monto (sin IVA)</h3>
@@ -1139,117 +1147,153 @@ try {
   const mesKey = (f) => (f && f.deliveryDate ? f.deliveryDate.slice(0,7) : '');
   const mesLabel = (k) => { const p = (k||'').split('-'); return p.length===2 ? `${MESES[parseInt(p[1],10)-1]} ${p[0]}` : (k||''); };
 
-  const porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
-  let totalEntregadas = 0, montoEntregado = 0;
-
-  datosFacturacion.facturas.forEach(f => {
-    if (f.statusOperativo !== ENTREGADO) return;            // solo entregados
-    const mk = (f.deliveryDate || '').slice(0, 7);          // 'YYYY-MM'
-    const cant = f.cantidad || 0;
-    const monto = f.monto || 0;
-    totalEntregadas += cant; montoEntregado += monto;
-    if (!porMes[mk]) porMes[mk] = { cant:0, monto:0 };
-    porMes[mk].cant += cant; porMes[mk].monto += monto;
-    if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
-    porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
-    (f.lineas || []).forEach(l => {
-      const m = l.modelo;
-      const c = l.qty || 0, mn = l.monto || 0;
-      if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
-      porModelo[m].cant += c; porModelo[m].monto += mn;
-      if (!porMesModelo[mk]) porMesModelo[mk] = {};
-      if (!porMesModelo[mk][m]) porMesModelo[mk][m] = { cant:0, monto:0 };
-      porMesModelo[mk][m].cant += c; porMesModelo[mk][m].monto += mn;
-    });
-  });
-
-  // KPIs (solo modelos: unidades y monto de vehiculos, sin IVA ni gastos)
-  const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  setKpi('kpiEntregadas', totalEntregadas);
-  setKpi('kpiMontoEntregado', fmt(montoEntregado));
-
-  // Tabla detalle (solo entregados; monto = vehiculos sin IVA, sin gastos)
-  const tFact = document.getElementById('tblFacturas');
-  if (tFact) tFact.innerHTML = datosFacturacion.facturas
-    .filter(f => f.statusOperativo === ENTREGADO)
-    .map(f => {
-      const lbl = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
-      const col = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
-      return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
-        <td>${f.deliveryDate}</td><td><span style="color:${col};font-weight:700">${lbl}</span></td>
-        <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
-        <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
-    }).join('');
-
-  const tabla = (id, rows, totalRow) => {
-    const el = document.getElementById(id); if (!el) return;
-    el.innerHTML = rows.join('') + (totalRow || '');
-  };
-  const mesesOrden = Object.keys(porMes).sort();   // 'YYYY-MM' cronologico
-  tabla('tblEjecutivos',
-    Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
-    `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
-  tabla('tblModelos',
-    Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
-  tabla('tblMeses',
-    mesesOrden.map(k=>`<tr><td>${mesLabel(k)}</td><td><b>${porMes[k].cant}</b></td><td><b>${fmt(porMes[k].monto)}</b></td></tr>`),
-    `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
-
-  // Modelo mas vendido por mes (para la tabla)
-  const topModelo = {};
-  mesesOrden.forEach(mk => {
-    let best = null, bv = -1;
-    Object.entries(porMesModelo[mk] || {}).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; } });
-    if (best !== null) topModelo[mk] = { modelo: best, cant: porMesModelo[mk][best].cant, monto: porMesModelo[mk][best].monto };
-  });
-  const tTop = document.getElementById('tblTopModelo');
-  if (tTop) tTop.innerHTML = mesesOrden.filter(mk => topModelo[mk]).map(mk => { const t = topModelo[mk]; return `<tr><td>${mesLabel(mk)}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
-
-  // ---- Gráficos (protegidos contra fallo de CDN / canvas inexistente) ----
-  function graficoDobleEje(canvasId, datos, labelFmt) {
-    const el = document.getElementById(canvasId);
-    if (!el || typeof Chart === 'undefined') return;
-    const keys = Object.keys(datos).sort();
-    const cants = keys.map(l => datos[l].cant);
-    const montos = keys.map(l => datos[l].monto);
-    const labels = keys.map(l => labelFmt ? labelFmt(l) : l);
-    new Chart(el.getContext('2d'), {
-      type: 'bar',
-      data: { labels, datasets: [
-        { label:'Cantidad', data:cants, backgroundColor:'rgba(30,158,90,0.7)', borderColor:'#166534', borderWidth:1, yAxisID:'y' },
-        { label:'Monto (sin IVA)', data:montos, backgroundColor:'rgba(204,0,0,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
-      ]},
-      options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-        plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
-        scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
-                  y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto (sin IVA)'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
-    });
+  // Referencias a graficos para destruirlos al re-renderizar (filtro por fecha)
+  let charts = {};
+  function destruirGraficos() {
+    Object.keys(charts).forEach(id => { try { charts[id].destroy(); } catch (e) {} });
+    charts = {};
   }
-  graficoDobleEje('chartMes', porMes, mesLabel);
-  graficoDobleEje('chartEjecutivo', porEjecutivo);
-  graficoDobleEje('chartModelo', porModelo);
-
-  // Entregado por Mes y Modelo (barras apiladas por cantidad de unidades)
-  const elTop = document.getElementById('chartTopModelo');
-  if (elTop && typeof Chart !== 'undefined') {
-    const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
-    const PALETA = ['#cc0000','#1e9e5a','#0f3460','#f59e0b','#536dfe','#8b5cf6','#e11d48','#14b8a6','#db2777','#65a30d','#0891b2','#b45309'];
-    const datasets = modelosOrden.map((m, i) => ({
-      label: m.replace('HONDA ', ''),
-      data: mesesOrden.map(mk => (porMesModelo[mk] && porMesModelo[mk][m]) ? porMesModelo[mk][m].cant : 0),
-      backgroundColor: PALETA[i % PALETA.length],
-      stack: 'cant'
-    }));
-    new Chart(elTop.getContext('2d'), {
-      type: 'bar',
-      data: { labels: mesesOrden.map(mesLabel), datasets },
-      options: { responsive:true, maintainAspectRatio:false,
-        plugins: { legend:{display: modelosOrden.length <= 12}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} ud`}} },
-        scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Unidades'}} } }
-    });
+  function nuevoGrafico(id, config) {
+    const el = document.getElementById(id);
+    if (!el || typeof Chart === 'undefined') return null;
+    charts[id] = new Chart(el.getContext('2d'), config);
+    return charts[id];
   }
 
-  // (se omite desglose por status operativo: solo se muestran entregados / modelos)
+  function renderFacturacion(lista) {
+    destruirGraficos();
+    const porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
+    let totalEntregadas = 0, montoEntregado = 0;
+
+    lista.forEach(f => {
+      if (f.statusOperativo !== ENTREGADO) return;            // solo entregados (vehiculos, sin IGTF/gastos)
+      const mk = (f.deliveryDate || '').slice(0, 7);          // 'YYYY-MM'
+      const cant = f.cantidad || 0;
+      const monto = f.monto || 0;
+      totalEntregadas += cant; montoEntregado += monto;
+      if (!porMes[mk]) porMes[mk] = { cant:0, monto:0 };
+      porMes[mk].cant += cant; porMes[mk].monto += monto;
+      if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
+      porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
+      (f.lineas || []).forEach(l => {                          // lineas = solo vehiculos (IGTF/gastos ya excluidos en origen)
+        const m = l.modelo;
+        const c = l.qty || 0, mn = l.monto || 0;
+        if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
+        porModelo[m].cant += c; porModelo[m].monto += mn;
+        if (!porMesModelo[mk]) porMesModelo[mk] = {};
+        if (!porMesModelo[mk][m]) porMesModelo[mk][m] = { cant:0, monto:0 };
+        porMesModelo[mk][m].cant += c; porMesModelo[mk][m].monto += mn;
+      });
+    });
+
+    // KPIs (solo modelos: unidades y monto de vehiculos, sin IVA ni gastos ni IGTF)
+    const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setKpi('kpiEntregadas', totalEntregadas);
+    setKpi('kpiMontoEntregado', fmt(montoEntregado));
+
+    // Tabla detalle (solo entregados; monto = vehiculos sin IVA, sin gastos)
+    const tFact = document.getElementById('tblFacturas');
+    if (tFact) tFact.innerHTML = lista
+      .filter(f => f.statusOperativo === ENTREGADO)
+      .map(f => {
+        const lbl = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
+        const col = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
+        return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
+          <td>${f.deliveryDate}</td><td><span style="color:${col};font-weight:700">${lbl}</span></td>
+          <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
+          <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
+      }).join('');
+
+    const tabla = (id, rows, totalRow) => {
+      const el = document.getElementById(id); if (!el) return;
+      el.innerHTML = rows.join('') + (totalRow || '');
+    };
+    const mesesOrden = Object.keys(porMes).sort();   // 'YYYY-MM' cronologico
+    tabla('tblEjecutivos',
+      Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
+    tabla('tblModelos',
+      Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
+    tabla('tblMeses',
+      mesesOrden.map(k=>`<tr><td>${mesLabel(k)}</td><td><b>${porMes[k].cant}</b></td><td><b>${fmt(porMes[k].monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
+
+    // Modelo mas vendido por mes (para la tabla) — solo vehiculos
+    const topModelo = {};
+    mesesOrden.forEach(mk => {
+      let best = null, bv = -1;
+      Object.entries(porMesModelo[mk] || {}).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; } });
+      if (best !== null) topModelo[mk] = { modelo: best, cant: porMesModelo[mk][best].cant, monto: porMesModelo[mk][best].monto };
+    });
+    const tTop = document.getElementById('tblTopModelo');
+    if (tTop) tTop.innerHTML = mesesOrden.filter(mk => topModelo[mk]).map(mk => { const t = topModelo[mk]; return `<tr><td>${mesLabel(mk)}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
+
+    // ---- Gráficos ----
+    function graficoDobleEje(canvasId, datos, labelFmt) {
+      const keys = Object.keys(datos).sort();
+      const cants = keys.map(l => datos[l].cant);
+      const montos = keys.map(l => datos[l].monto);
+      const labels = keys.map(l => labelFmt ? labelFmt(l) : l);
+      nuevoGrafico(canvasId, {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label:'Cantidad', data:cants, backgroundColor:'rgba(30,158,90,0.7)', borderColor:'#166534', borderWidth:1, yAxisID:'y' },
+          { label:'Monto (sin IVA)', data:montos, backgroundColor:'rgba(204,0,0,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
+          scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
+                    y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto (sin IVA)'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
+      });
+    }
+    graficoDobleEje('chartMes', porMes, mesLabel);
+    graficoDobleEje('chartEjecutivo', porEjecutivo);
+    graficoDobleEje('chartModelo', porModelo);
+
+    // Entregado por Mes y Modelo (barras apiladas por cantidad de unidades) — solo vehiculos
+    const elTop = document.getElementById('chartTopModelo');
+    if (elTop && typeof Chart !== 'undefined') {
+      const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
+      const PALETA = ['#cc0000','#1e9e5a','#0f3460','#f59e0b','#536dfe','#8b5cf6','#e11d48','#14b8a6','#db2777','#65a30d','#0891b2','#b45309'];
+      const datasets = modelosOrden.map((m, i) => ({
+        label: m.replace('HONDA ', ''),
+        data: mesesOrden.map(mk => (porMesModelo[mk] && porMesModelo[mk][m]) ? porMesModelo[mk][m].cant : 0),
+        backgroundColor: PALETA[i % PALETA.length],
+        stack: 'cant'
+      }));
+      nuevoGrafico('chartTopModelo', {
+        type: 'bar',
+        data: { labels: mesesOrden.map(mesLabel), datasets },
+        options: { responsive:true, maintainAspectRatio:false,
+          plugins: { legend:{display: modelosOrden.length <= 12}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} ud`}} },
+          scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Unidades'}} } }
+      });
+    }
+  }
+
+  // ---- Filtro por fecha (Desde / Hasta aplicados a deliveryDate) ----
+  function facturasFiltradas() {
+    const d = ((document.getElementById('fDesde') || {}).value || '');   // 'YYYY-MM-DD'
+    const h = ((document.getElementById('fHasta') || {}).value || '');
+    return datosFacturacion.facturas.filter(f => {
+      const fd = f.deliveryDate || '';
+      if (d && fd < d) return false;
+      if (h && fd > h) return false;
+      return true;
+    });
+  }
+  function actualizar() { renderFacturacion(facturasFiltradas()); }
+
+  ['fDesde','fHasta'].forEach(id => { const e = document.getElementById(id); if (e) e.addEventListener('change', actualizar); });
+  const btnLimpiar = document.getElementById('fLimpiar');
+  if (btnLimpiar) btnLimpiar.addEventListener('click', () => {
+    const d = document.getElementById('fDesde'), h = document.getElementById('fHasta');
+    if (d) d.value = '2026-01-01';
+    if (h) h.value = '2026-12-31';
+    actualizar();
+  });
+
+  actualizar();  // render inicial (todas las facturas entregadas 2026)
 } catch (e) {
   console.error('Error en el módulo Facturación:', e);
 }
