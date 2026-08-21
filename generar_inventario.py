@@ -54,6 +54,16 @@ def call_kw(model, method, args=None, kwargs=None):
     return res["result"]
 
 
+# Respaldo para Facturación: Odoo de Facturación (latinbien.com / erp_production)
+# por si el Odoo del inventario no expone los campos de facturación.
+# Se prefiere el Odoo del inventario (latinbienmotors.com, env ODOO_USER/PASSWORD);
+# este respaldo solo se usa si aquel no devuelve datos.
+FACT_BACKUP_BASE = os.environ.get("ODOO_FACT_BASE", "https://latinbien.com")
+FACT_BACKUP_DB   = os.environ.get("ODOO_FACT_DB", "erp_production")
+FACT_BACKUP_USER = os.environ.get("ODOO_FACT_USER", "latinbienti@latinbien.com")
+FACT_BACKUP_PWD  = os.environ.get("ODOO_FACT_PASSWORD", "z+cakaSe2805*")
+
+
 def strip_accents(s):
     s = unicodedata.normalize("NFD", s)
     return "".join(c for c in s if unicodedata.category(c) != "Mn")
@@ -374,61 +384,98 @@ def get_status_comercial():
     return out
 
 
-# ── Facturación (Odoo módulo Ventas / sale.order) ───────────────────────
-def get_facturacion():
-    """Facturación desde Odoo (módulo Ventas) — SOLO LECTURA.
+# ── Facturación (módulo Ventas / sale.order, por status operativo) ──────
+# Fuente principal: Odoo del inventario (latinbienmotors.com). Respaldo:
+# Odoo de Facturación (latinbien.com / erp_production) si el primero no
+# expone los campos. La agrupación es por x_status_operativos (status
+# operativo) y por fecha de entrega (commitment_date / date_order).
+def _fact_rpc(opener, url, params):
+    payload = {"jsonrpc": "2.0", "method": "call", "params": params, "id": 1}
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    resp = opener.open(req, timeout=90)
+    return json.loads(resp.read().decode())
 
-    Replica la lógica del favorito FACTURACION MENSUAL de Odoo:
-      - sale.order filtrado por x_status_compra='4' (Entrega Realizada) y
-        commitment_date (fecha de entrega) en un rango amplio.
-      - ejecutivo = user_id (vendedor).
-      - gasto de entrega = líneas cuyo producto contiene 'gasto administrativo'
-        o 'gestión de cobranza'.
-    Devuelve lista de dicts en el formato que consume datosFacturacion.facturas
-    en el HTML: nombre, cliente, ejecutivo, deliveryDate, statusOperativo,
-    total, gastoAdmin, modelos.
-    """
-    ST_LABELS = {'6': 'Entregado', '8': 'Cancelación Total', '4': 'Aprobado',
-                 '10': 'Congelado', '12': 'Congelado', '0': 'Sin asignar'}
 
-    # Asegurar sesión (get_data ya autentica, pero nos protegemos si se llama solo)
-    try:
-        auth = rpc(BASE + "/web/session/authenticate", "call", {
-            "db": DB, "login": USER, "password": PWD
-        })
-        if not auth.get("result", {}).get("uid"):
-            raise RuntimeError("Fallo de autenticacion en Odoo (Facturacion)")
-    except Exception as e:
-        print(f"FACTURACION: error de autenticacion: {e}")
-        return []
+def _fact_call_kw(opener, base, model, method, args=None, kwargs=None):
+    res = _fact_rpc(opener, base + "/web/dataset/call_kw", {
+        "model": model, "method": method, "args": args or [], "kwargs": kwargs or {}})
+    if "error" in res:
+        raise RuntimeError(json.dumps(res["error"], ensure_ascii=False)[:2000])
+    return res["result"]
 
-    # Ventana: 2025-01-01 04:00 (Caracas UTC-4) hasta 2027-01-01 04:00
-    so_domain = [
-        ['x_status_compra', '=', '4'],
-        ['commitment_date', '>=', '2025-01-01 04:00:00'],
-        ['commitment_date', '<', '2027-01-01 04:00:00'],
-    ]
-    try:
-        so_ids = call_kw('sale.order', 'search', [so_domain])
-    except Exception as e:
-        print(f"FACTURACION: error buscando sale.order: {e}")
-        return []
+
+def _fetch_facturacion(base, db, user, pwd):
+    """Consulta sale.order en el Odoo indicado y devuelve la lista de facturas
+    en el formato que consume datosFacturacion.facturas del HTML."""
+    cj = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    auth = _fact_rpc(opener, base + "/web/session/authenticate",
+                     {"db": db, "login": user, "password": pwd})
+    if not auth.get("result", {}).get("uid"):
+        raise RuntimeError("Fallo de autenticacion")
+
+    # Descubrir campos reales de sale.order en este Odoo
+    flds = _fact_call_kw(opener, base, 'sale.order', 'fields_get', [[]],
+                        {"attributes": ["type", "store"]})
+    date_field = 'commitment_date' if 'commitment_date' in flds else (
+        'date_order' if 'date_order' in flds else None)
+    has_status_compra = 'x_status_compra' in flds
+    has_status_op = 'x_status_operativos' in flds
+
+    # Ventana de fechas (Caracas UTC-4)
+    date_part = []
+    if date_field:
+        date_part = [
+            [date_field, '>=', '2025-01-01 04:00:00'],
+            [date_field, '<', '2027-01-01 04:00:00'],
+        ]
+
+    # Estrategias de dominio (status), en orden de preferencia
+    status_strategies = []
+    if has_status_op:
+        status_strategies.append(['x_status_operativos', '=', '6'])  # Entregado
+    if has_status_compra:
+        status_strategies.append(['x_status_compra', '=', '4'])      # Entrega Realizada
+    status_strategies.append(None)  # sin filtro de status
+
+    so_ids = []
+    for st in status_strategies:
+        domain = date_part + ([st] if st else [])
+        try:
+            ids = _fact_call_kw(opener, base, 'sale.order', 'search', [domain], {"limit": 5000})
+            if ids:
+                so_ids = ids
+                break
+        except Exception as e:
+            print(f"  FACTURACION: dominio {st} fallo: {e}")
+            continue
 
     if not so_ids:
-        return []
+        # Último recurso: búsqueda sin filtros de fecha/status
+        try:
+            so_ids = _fact_call_kw(opener, base, 'sale.order', 'search', [[]], {"limit": 2000})
+        except Exception as e:
+            raise RuntimeError(f"busqueda total fallo: {e}")
 
     # Leer órdenes en lotes
     ordenes = []
     for i in range(0, len(so_ids), 300):
-        batch = so_ids[i:i+300]
-        recs = call_kw('sale.order', 'read', [batch, [
-            'id', 'name', 'partner_id', 'commitment_date',
-            'amount_total', 'amount_untaxed',
-            'user_id', 'team_id', 'x_status_operativos', 'x_status_compra',
-            'order_line',
-        ]])
-        if recs:
-            ordenes.extend(recs)
+        batch = so_ids[i:i + 300]
+        try:
+            recs = _fact_call_kw(opener, base, 'sale.order', 'read', [batch, [
+                'id', 'name', 'partner_id', 'commitment_date', 'date_order',
+                'amount_total', 'user_id', 'x_status_operativos', 'x_status_compra',
+                'order_line',
+            ]])
+            if recs:
+                ordenes.extend(recs)
+        except Exception as e:
+            print(f"  FACTURACION: error leyendo ordenes: {e}")
+            continue
+
+    if not ordenes:
+        return []
 
     # Recolectar líneas de orden
     line_ids = []
@@ -439,21 +486,24 @@ def get_facturacion():
     lineas = []
     if line_ids:
         for i in range(0, len(line_ids), 300):
-            batch = line_ids[i:i+300]
-            recs = call_kw('sale.order.line', 'read', [batch, [
-                'id', 'product_id', 'product_uom_qty', 'price_unit',
-                'price_subtotal', 'price_total', 'discount', 'purchase_price',
-            ]])
-            if recs:
-                lineas.extend(recs)
+            batch = line_ids[i:i + 300]
+            try:
+                recs = _fact_call_kw(opener, base, 'sale.order.line', 'read', [batch, [
+                    'id', 'product_id', 'product_uom_qty', 'price_subtotal',
+                ]])
+                if recs:
+                    lineas.extend(recs)
+            except Exception as e:
+                print(f"  FACTURACION: error leyendo lineas: {e}")
+                continue
 
     # Mapa línea -> orden
-    lineas_por_orden = {}
+    lpo = {}
     for lr in lineas:
         lid = lr['id']
         for so in ordenes:
             if lid in (so.get('order_line') or []):
-                lineas_por_orden.setdefault(so['id'], []).append(lr)
+                lpo.setdefault(so['id'], []).append(lr)
                 break
 
     facturas = []
@@ -462,24 +512,20 @@ def get_facturacion():
         inv_name = so.get('name', '')
         partner = so.get('partner_id')
         partner_name = partner[1] if isinstance(partner, list) and len(partner) > 1 else 'Desconocido'
-        fecha = str(so.get('commitment_date') or '')[:10]
-
+        fecha = str(so.get('commitment_date') or so.get('date_order') or '')[:10]
         uid = so.get('user_id')
         ej_name = uid[1] if isinstance(uid, list) and len(uid) > 1 else 'Sin asignar'
-
         raw_st = so.get('x_status_operativos')
         st_str = str(raw_st) if raw_st is not None else ''
-
         total = float(so.get('amount_total') or 0)
 
         gasto_admin = 0.0
         modelos = []
-        for lr in lineas_por_orden.get(so_id, []):
+        for lr in lpo.get(so_id, []):
             pid = lr.get('product_id')
             pname = pid[1] if isinstance(pid, list) and len(pid) > 1 else 'Producto'
             pu = float(lr.get('price_subtotal') or 0)
-            is_admin = 'gasto administrativo' in pname.lower() or 'gestion de cobranza' in pname.lower()
-            if is_admin:
+            if 'gasto administrativo' in pname.lower() or 'gestion de cobranza' in pname.lower():
                 gasto_admin += pu
             else:
                 modelos.append(pname)
@@ -496,6 +542,28 @@ def get_facturacion():
         })
 
     return facturas
+
+
+def get_facturacion():
+    """Facturación desde Odoo (módulo Ventas / sale.order).
+    Fuente principal: latinbienmotors.com (Odoo del inventario).
+    Respaldo silencioso: latinbien.com, solo si la fuente principal viene vacía.
+    """
+    intentos = [
+        ("inventario latinbienmotors.com", BASE, DB, USER, PWD),
+        ("facturacion latinbien.com", FACT_BACKUP_BASE, FACT_BACKUP_DB,
+         FACT_BACKUP_USER, FACT_BACKUP_PWD),
+    ]
+    for nombre, b, d, u, p in intentos:
+        try:
+            fact = _fetch_facturacion(b, d, u, p)
+            if fact:
+                print(f"FACTURACION: fuente={nombre} registros={len(fact)}")
+                return fact
+            print(f"FACTURACION: {nombre} sin registros, probando siguiente fuente.")
+        except Exception as e:
+            print(f"FACTURACION: {nombre} error: {e}")
+    return []
 
 
 def build_html(units, status_comercial, facturacion=None):
