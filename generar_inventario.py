@@ -643,7 +643,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventario Vehículos Honda — LatinBienMotors</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.min.js"></script>
+<script src="chart.umd.min.js"></script>
 <style>
   :root{
     --honda-red: #cc0000;
