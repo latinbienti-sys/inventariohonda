@@ -423,21 +423,22 @@ def _fetch_facturacion(base, db, user, pwd):
     has_status_compra = 'x_status_compra' in flds
     has_status_op = 'x_status_operativos' in flds
 
-    # Ventana de fechas (Caracas UTC-4)
+    # Ventana de fechas: solo 2026 (Caracas UTC-4)
     date_part = []
     if date_field:
         date_part = [
-            [date_field, '>=', '2025-01-01 04:00:00'],
+            [date_field, '>=', '2026-01-01 04:00:00'],
             [date_field, '<', '2027-01-01 04:00:00'],
         ]
 
-    # Estrategias de dominio (status), en orden de preferencia
-    status_strategies = []
+    # Estrategias de dominio (status), en orden de preferencia.
+    # Primero traemos TODOS los de 2026 y dejamos que el JS agrupe por
+    # status operativo (Entregado, Aprobado, Ninguno/Gasto, Cancelado...).
+    status_strategies = [None]
     if has_status_op:
         status_strategies.append(['x_status_operativos', '=', '6'])  # Entregado
     if has_status_compra:
         status_strategies.append(['x_status_compra', '=', '4'])      # Entrega Realizada
-    status_strategies.append(None)  # sin filtro de status
 
     so_ids = []
     for st in status_strategies:
