@@ -1,0 +1,11 @@
+# Archivos fuera de alcance (fuente latinbien.com equivocada - no usar)
+generar_stock_general.py
+.github/workflows/actualizar_stock_general.yml
+Informe_Stock_Honda*
+
+# Python
+__pycache__/
+*.pyc
+
+# Archivos temporales de verificacion
+check_fact.js
