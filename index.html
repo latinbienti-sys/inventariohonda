@@ -222,6 +222,14 @@
       <div class="kpi green"><div class="v" id="kpiMontoEntregado">$ 0.00</div><div class="l">Monto Entregado (sin IVA)</div></div>
     </div>
 
+    <!-- Filtro por fecha de entrega -->
+    <div class="card" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+      <span style="font-weight:700; color:var(--accent);">Filtrar por fecha de entrega:</span>
+      <label>Desde <input type="date" id="fDesde" value="2026-01-01" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <label>Hasta <input type="date" id="fHasta" value="2026-12-31" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <button id="fLimpiar" style="padding:6px 14px; border:none; border-radius:8px; background:var(--honda-red); color:#fff; font-weight:700; cursor:pointer;">Limpiar</button>
+    </div>
+
     <!-- Entregado por Mes -->
     <div class="card" style="margin-bottom:16px;">
       <h3>Entregado por Mes (delivery date) — Unidades y Monto (sin IVA)</h3>
@@ -314,7 +322,7 @@
     </div>
   </div><!-- /tabComercial -->
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-21 14:23 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-21 15:13 UTC</span></footer>
 </div>
 
 <script>
@@ -487,7 +495,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 // Datos REALES inyectados desde Odoo (módulo Ventas / sale.order) vía generar_inventario.py.
 try {
   const datosFacturacion = {
-    facturas: [{"nombre":"LBM-ORDEN-00076","cliente":"GERALDINE CAROLINA RINCON AÑEZ","ejecutivo":"DIEGO ARMANDO FERNANDEZ","deliveryDate":"2026-08-31","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":35600.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1238.88},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":37242.28},{"nombre":"LBM-ORDEN-00064","cliente":"YADIRA COROMOTO ARIZA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-04","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","TRAMITE INTT","IGTF TERCEROS DIPROMURO","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00065","cliente":"ROMINA BARBACANE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-12","statusOperativo":"6","modelos":["IGTF TERCEROS DIPROMURO","PLACA INTT","TRAMITE INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00040","cliente":"RAFAEL ANTONIO TREJO ROMERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00057","cliente":"YOANA SORIMAR LACRUZ QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-30","statusOperativo":"6","modelos":["IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":0.0,"monto":0.0},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00046","cliente":"YADIRA COROMOTO NAVA BRACHO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00009","cliente":"NEYDUTH SALOME HIGUERA MORALES","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-05-06","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":970.92},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":29274.32},{"nombre":"LBM-ORDEN-00027","cliente":"ROBERTO CRALOS DIAZ MORANTES","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-27","statusOperativo":"6","modelos":["IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00034","cliente":"DALIA MARIA SANCHEZ DE SULBARAN","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-08","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00026","cliente":"GREGORY ARCANGEL ARAQUE LOPEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0},{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":0.0,"monto":0.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":970.92},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":29274.32},{"nombre":"LBM-ORDEN-00013","cliente":"RAMON BENITO VALBUENA RONDON","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00055","cliente":"GERARDO JOSE RAMIREZ FERNANDEZ...","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":35600.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1238.88},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":37242.28},{"nombre":"LBM-ORDEN-00053","cliente":"JUHENDIS ESTHER VALLADARES LOPEZ F.P","ejecutivo":"JUHENDIS VALLADARES","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":27900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":970.92},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":29274.32},{"nombre":"LBM-ORDEN-00050","cliente":"DARIO ALEJANDRO GARAY GONZALEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00048","cliente":"OSCAR ALI QUINTERO QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00030","cliente":"FERNANDO JOSE VERA USECHE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00032","cliente":"GUSTAVO BALZA RANGEL","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00044","cliente":"CARLA ANDREINA PEÑALOZA QUEVEDO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-19","statusOperativo":"6","modelos":["[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00036","cliente":"LUIS MIGUEL ANGULO ARELLANO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT","[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1190.16},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":39672.0}],"cantidad":4.0,"monto":41265.56},{"nombre":"LBM-ORDEN-00008","cliente":"LUIS ALBERTO ANGARITA VERGARA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":30900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1075.32},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":32378.72},{"nombre":"LBM-ORDEN-00004","cliente":"JAIR DANIEL MARTINEZ VALERO","ejecutivo":"M  GIBSON","deliveryDate":"2026-04-14","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":33600.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1169.28},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35172.68},{"nombre":"LBM-ORDEN-00002","cliente":"ROSAURA MARQUEZ CARRERO","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":30700.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1068.36},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":32171.76},{"nombre":"LBM-ORDEN-00041","cliente":"EDIMAR KATHERINE QUINTERO GARCIA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-21","statusOperativo":"6","modelos":["[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)","qty":1.0,"monto":30900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1075.32},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":32378.72},{"nombre":"LBM-ORDEN-00028","cliente":"MARYSBELIA CASAL PARRA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1110.12},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":33413.52},{"nombre":"LBM-ORDEN-00038","cliente":"MARIA ANDREINA MORENO SALAZAR","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-23","statusOperativo":"6","modelos":["[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":27900.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":970.92},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":29274.32},{"nombre":"LBM-ORDEN-00001","cliente":"RAFAEL ANTONIO CONTRERAS LINDARTE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-16","statusOperativo":"6","modelos":["HONDA HR-V 1.5L A/T EXL 2026","[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","qty":1.0,"monto":33600.0},{"modelo":"[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)","qty":0.0,"monto":0.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1169.28},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35172.68},{"nombre":"LBM-ORDEN-00003","cliente":"LUCILA CASTILLO DE GONZALEZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)","qty":1.0,"monto":33600.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1169.28},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35172.68},{"nombre":"LBM-ORDEN-00005","cliente":"JORGE LUIS ROJAS CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)","qty":1.0,"monto":34200.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1190.16},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35793.56},{"nombre":"LBM-ORDEN-00006","cliente":"AURA ELENA PEREZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-31","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":33600.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1169.28},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35172.68},{"nombre":"LBM-ORDEN-00012","cliente":"NORELIS COLMENARES GALAVIZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-29","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":34200.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1190.16},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35793.56},{"nombre":"LBM-ORDEN-00011","cliente":"LUIS BERNARDINO GIOVANNONE CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-21","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":34200.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1190.16},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35793.56},{"nombre":"LBM-ORDEN-00007","cliente":"ANA MARIA NIGRO CARRILLO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-08","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":34200.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1190.16},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35793.56},{"nombre":"LBM-ORDEN-00010","cliente":"FARMACIA FARMA JIRETH","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-28","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","IGTF TERCEROS DIPROMURO","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":34200.0},{"modelo":"IGTF TERCEROS DIPROMURO","qty":1.0,"monto":1190.16},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":4.0,"monto":35793.56}],
+    facturas: [{"nombre":"LBM-ORDEN-00076","cliente":"GERALDINE CAROLINA RINCON AÑEZ","ejecutivo":"DIEGO ARMANDO FERNANDEZ","deliveryDate":"2026-08-31","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":35600.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":36003.4},{"nombre":"LBM-ORDEN-00064","cliente":"YADIRA COROMOTO ARIZA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-04","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00065","cliente":"ROMINA BARBACANE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-12","statusOperativo":"6","modelos":["PLACA INTT","TRAMITE INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00040","cliente":"RAFAEL ANTONIO TREJO ROMERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00057","cliente":"YOANA SORIMAR LACRUZ QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-30","statusOperativo":"6","modelos":["TRAMITE INTT","PLACA INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":0.0,"monto":0.0},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00046","cliente":"YADIRA COROMOTO NAVA BRACHO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["TRAMITE INTT","PLACA INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00009","cliente":"NEYDUTH SALOME HIGUERA MORALES","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-05-06","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":28303.4},{"nombre":"LBM-ORDEN-00027","cliente":"ROBERTO CRALOS DIAZ MORANTES","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-27","statusOperativo":"6","modelos":["TRAMITE INTT","PLACA INTT","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00034","cliente":"DALIA MARIA SANCHEZ DE SULBARAN","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-08","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00026","cliente":"GREGORY ARCANGEL ARAQUE LOPEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0},{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":0.0,"monto":0.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":28303.4},{"nombre":"LBM-ORDEN-00013","cliente":"RAMON BENITO VALBUENA RONDON","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00055","cliente":"GERARDO JOSE RAMIREZ FERNANDEZ...","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":35600.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":36003.4},{"nombre":"LBM-ORDEN-00053","cliente":"JUHENDIS ESTHER VALLADARES LOPEZ F.P","ejecutivo":"JUHENDIS VALLADARES","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":27900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":28303.4},{"nombre":"LBM-ORDEN-00050","cliente":"DARIO ALEJANDRO GARAY GONZALEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00048","cliente":"OSCAR ALI QUINTERO QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00030","cliente":"FERNANDO JOSE VERA USECHE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00032","cliente":"GUSTAVO BALZA RANGEL","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00044","cliente":"CARLA ANDREINA PEÑALOZA QUEVEDO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-19","statusOperativo":"6","modelos":["[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00036","cliente":"LUIS MIGUEL ANGULO ARELLANO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["TRAMITE INTT","PLACA INTT","[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4},{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":39672.0}],"cantidad":3.0,"monto":40075.4},{"nombre":"LBM-ORDEN-00008","cliente":"LUIS ALBERTO ANGARITA VERGARA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":30900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":31303.4},{"nombre":"LBM-ORDEN-00004","cliente":"JAIR DANIEL MARTINEZ VALERO","ejecutivo":"M  GIBSON","deliveryDate":"2026-04-14","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":33600.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34003.4},{"nombre":"LBM-ORDEN-00002","cliente":"ROSAURA MARQUEZ CARRERO","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":30700.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":31103.4},{"nombre":"LBM-ORDEN-00041","cliente":"EDIMAR KATHERINE QUINTERO GARCIA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-21","statusOperativo":"6","modelos":["[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)","qty":1.0,"monto":30900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":31303.4},{"nombre":"LBM-ORDEN-00028","cliente":"MARYSBELIA CASAL PARRA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":32303.4},{"nombre":"LBM-ORDEN-00038","cliente":"MARIA ANDREINA MORENO SALAZAR","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-23","statusOperativo":"6","modelos":["[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":27900.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":28303.4},{"nombre":"LBM-ORDEN-00001","cliente":"RAFAEL ANTONIO CONTRERAS LINDARTE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-16","statusOperativo":"6","modelos":["HONDA HR-V 1.5L A/T EXL 2026","[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","qty":1.0,"monto":33600.0},{"modelo":"[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)","qty":0.0,"monto":0.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34003.4},{"nombre":"LBM-ORDEN-00003","cliente":"LUCILA CASTILLO DE GONZALEZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)","qty":1.0,"monto":33600.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34003.4},{"nombre":"LBM-ORDEN-00005","cliente":"JORGE LUIS ROJAS CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)","qty":1.0,"monto":34200.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34603.4},{"nombre":"LBM-ORDEN-00006","cliente":"AURA ELENA PEREZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-31","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":33600.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34003.4},{"nombre":"LBM-ORDEN-00012","cliente":"NORELIS COLMENARES GALAVIZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-29","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":34200.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34603.4},{"nombre":"LBM-ORDEN-00011","cliente":"LUIS BERNARDINO GIOVANNONE CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-21","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":34200.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34603.4},{"nombre":"LBM-ORDEN-00007","cliente":"ANA MARIA NIGRO CARRILLO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-08","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":34200.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34603.4},{"nombre":"LBM-ORDEN-00010","cliente":"FARMACIA FARMA JIRETH","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-28","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","TRAMITE INTT","PLACA INTT"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":34200.0},{"modelo":"TRAMITE INTT","qty":1.0,"monto":400.0},{"modelo":"PLACA INTT","qty":1.0,"monto":3.4}],"cantidad":3.0,"monto":34603.4}],
     statusLabels: { '6':'Entregado','4':'Aprobado','0':'Ninguno (Gasto Entrega)','8':'Cancelado','10':'Congelado','12':'Congelado' },
     statusColors: { '6':'#1e9e5a','4':'#f59e0b','0':'#e11d48','8':'#64748b','10':'#8b5cf6','12':'#8b5cf6' },
   };
@@ -497,117 +505,153 @@ try {
   const mesKey = (f) => (f && f.deliveryDate ? f.deliveryDate.slice(0,7) : '');
   const mesLabel = (k) => { const p = (k||'').split('-'); return p.length===2 ? `${MESES[parseInt(p[1],10)-1]} ${p[0]}` : (k||''); };
 
-  const porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
-  let totalEntregadas = 0, montoEntregado = 0;
-
-  datosFacturacion.facturas.forEach(f => {
-    if (f.statusOperativo !== ENTREGADO) return;            // solo entregados
-    const mk = (f.deliveryDate || '').slice(0, 7);          // 'YYYY-MM'
-    const cant = f.cantidad || 0;
-    const monto = f.monto || 0;
-    totalEntregadas += cant; montoEntregado += monto;
-    if (!porMes[mk]) porMes[mk] = { cant:0, monto:0 };
-    porMes[mk].cant += cant; porMes[mk].monto += monto;
-    if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
-    porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
-    (f.lineas || []).forEach(l => {
-      const m = l.modelo;
-      const c = l.qty || 0, mn = l.monto || 0;
-      if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
-      porModelo[m].cant += c; porModelo[m].monto += mn;
-      if (!porMesModelo[mk]) porMesModelo[mk] = {};
-      if (!porMesModelo[mk][m]) porMesModelo[mk][m] = { cant:0, monto:0 };
-      porMesModelo[mk][m].cant += c; porMesModelo[mk][m].monto += mn;
-    });
-  });
-
-  // KPIs (solo modelos: unidades y monto de vehiculos, sin IVA ni gastos)
-  const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  setKpi('kpiEntregadas', totalEntregadas);
-  setKpi('kpiMontoEntregado', fmt(montoEntregado));
-
-  // Tabla detalle (solo entregados; monto = vehiculos sin IVA, sin gastos)
-  const tFact = document.getElementById('tblFacturas');
-  if (tFact) tFact.innerHTML = datosFacturacion.facturas
-    .filter(f => f.statusOperativo === ENTREGADO)
-    .map(f => {
-      const lbl = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
-      const col = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
-      return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
-        <td>${f.deliveryDate}</td><td><span style="color:${col};font-weight:700">${lbl}</span></td>
-        <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
-        <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
-    }).join('');
-
-  const tabla = (id, rows, totalRow) => {
-    const el = document.getElementById(id); if (!el) return;
-    el.innerHTML = rows.join('') + (totalRow || '');
-  };
-  const mesesOrden = Object.keys(porMes).sort();   // 'YYYY-MM' cronologico
-  tabla('tblEjecutivos',
-    Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
-    `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
-  tabla('tblModelos',
-    Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
-  tabla('tblMeses',
-    mesesOrden.map(k=>`<tr><td>${mesLabel(k)}</td><td><b>${porMes[k].cant}</b></td><td><b>${fmt(porMes[k].monto)}</b></td></tr>`),
-    `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
-
-  // Modelo mas vendido por mes (para la tabla)
-  const topModelo = {};
-  mesesOrden.forEach(mk => {
-    let best = null, bv = -1;
-    Object.entries(porMesModelo[mk] || {}).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; } });
-    if (best !== null) topModelo[mk] = { modelo: best, cant: porMesModelo[mk][best].cant, monto: porMesModelo[mk][best].monto };
-  });
-  const tTop = document.getElementById('tblTopModelo');
-  if (tTop) tTop.innerHTML = mesesOrden.filter(mk => topModelo[mk]).map(mk => { const t = topModelo[mk]; return `<tr><td>${mesLabel(mk)}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
-
-  // ---- Gráficos (protegidos contra fallo de CDN / canvas inexistente) ----
-  function graficoDobleEje(canvasId, datos, labelFmt) {
-    const el = document.getElementById(canvasId);
-    if (!el || typeof Chart === 'undefined') return;
-    const keys = Object.keys(datos).sort();
-    const cants = keys.map(l => datos[l].cant);
-    const montos = keys.map(l => datos[l].monto);
-    const labels = keys.map(l => labelFmt ? labelFmt(l) : l);
-    new Chart(el.getContext('2d'), {
-      type: 'bar',
-      data: { labels, datasets: [
-        { label:'Cantidad', data:cants, backgroundColor:'rgba(30,158,90,0.7)', borderColor:'#166534', borderWidth:1, yAxisID:'y' },
-        { label:'Monto (sin IVA)', data:montos, backgroundColor:'rgba(204,0,0,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
-      ]},
-      options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-        plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
-        scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
-                  y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto (sin IVA)'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
-    });
+  // Referencias a graficos para destruirlos al re-renderizar (filtro por fecha)
+  let charts = {};
+  function destruirGraficos() {
+    Object.keys(charts).forEach(id => { try { charts[id].destroy(); } catch (e) {} });
+    charts = {};
   }
-  graficoDobleEje('chartMes', porMes, mesLabel);
-  graficoDobleEje('chartEjecutivo', porEjecutivo);
-  graficoDobleEje('chartModelo', porModelo);
-
-  // Entregado por Mes y Modelo (barras apiladas por cantidad de unidades)
-  const elTop = document.getElementById('chartTopModelo');
-  if (elTop && typeof Chart !== 'undefined') {
-    const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
-    const PALETA = ['#cc0000','#1e9e5a','#0f3460','#f59e0b','#536dfe','#8b5cf6','#e11d48','#14b8a6','#db2777','#65a30d','#0891b2','#b45309'];
-    const datasets = modelosOrden.map((m, i) => ({
-      label: m.replace('HONDA ', ''),
-      data: mesesOrden.map(mk => (porMesModelo[mk] && porMesModelo[mk][m]) ? porMesModelo[mk][m].cant : 0),
-      backgroundColor: PALETA[i % PALETA.length],
-      stack: 'cant'
-    }));
-    new Chart(elTop.getContext('2d'), {
-      type: 'bar',
-      data: { labels: mesesOrden.map(mesLabel), datasets },
-      options: { responsive:true, maintainAspectRatio:false,
-        plugins: { legend:{display: modelosOrden.length <= 12}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} ud`}} },
-        scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Unidades'}} } }
-    });
+  function nuevoGrafico(id, config) {
+    const el = document.getElementById(id);
+    if (!el || typeof Chart === 'undefined') return null;
+    charts[id] = new Chart(el.getContext('2d'), config);
+    return charts[id];
   }
 
-  // (se omite desglose por status operativo: solo se muestran entregados / modelos)
+  function renderFacturacion(lista) {
+    destruirGraficos();
+    const porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
+    let totalEntregadas = 0, montoEntregado = 0;
+
+    lista.forEach(f => {
+      if (f.statusOperativo !== ENTREGADO) return;            // solo entregados (vehiculos, sin IGTF/gastos)
+      const mk = (f.deliveryDate || '').slice(0, 7);          // 'YYYY-MM'
+      const cant = f.cantidad || 0;
+      const monto = f.monto || 0;
+      totalEntregadas += cant; montoEntregado += monto;
+      if (!porMes[mk]) porMes[mk] = { cant:0, monto:0 };
+      porMes[mk].cant += cant; porMes[mk].monto += monto;
+      if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
+      porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
+      (f.lineas || []).forEach(l => {                          // lineas = solo vehiculos (IGTF/gastos ya excluidos en origen)
+        const m = l.modelo;
+        const c = l.qty || 0, mn = l.monto || 0;
+        if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
+        porModelo[m].cant += c; porModelo[m].monto += mn;
+        if (!porMesModelo[mk]) porMesModelo[mk] = {};
+        if (!porMesModelo[mk][m]) porMesModelo[mk][m] = { cant:0, monto:0 };
+        porMesModelo[mk][m].cant += c; porMesModelo[mk][m].monto += mn;
+      });
+    });
+
+    // KPIs (solo modelos: unidades y monto de vehiculos, sin IVA ni gastos ni IGTF)
+    const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setKpi('kpiEntregadas', totalEntregadas);
+    setKpi('kpiMontoEntregado', fmt(montoEntregado));
+
+    // Tabla detalle (solo entregados; monto = vehiculos sin IVA, sin gastos)
+    const tFact = document.getElementById('tblFacturas');
+    if (tFact) tFact.innerHTML = lista
+      .filter(f => f.statusOperativo === ENTREGADO)
+      .map(f => {
+        const lbl = datosFacturacion.statusLabels[f.statusOperativo] || f.statusOperativo;
+        const col = datosFacturacion.statusColors[f.statusOperativo] || '#6b728e';
+        return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
+          <td>${f.deliveryDate}</td><td><span style="color:${col};font-weight:700">${lbl}</span></td>
+          <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
+          <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
+      }).join('');
+
+    const tabla = (id, rows, totalRow) => {
+      const el = document.getElementById(id); if (!el) return;
+      el.innerHTML = rows.join('') + (totalRow || '');
+    };
+    const mesesOrden = Object.keys(porMes).sort();   // 'YYYY-MM' cronologico
+    tabla('tblEjecutivos',
+      Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
+    tabla('tblModelos',
+      Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
+    tabla('tblMeses',
+      mesesOrden.map(k=>`<tr><td>${mesLabel(k)}</td><td><b>${porMes[k].cant}</b></td><td><b>${fmt(porMes[k].monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalEntregadas}</td><td>${fmt(montoEntregado)}</td></tr>`);
+
+    // Modelo mas vendido por mes (para la tabla) — solo vehiculos
+    const topModelo = {};
+    mesesOrden.forEach(mk => {
+      let best = null, bv = -1;
+      Object.entries(porMesModelo[mk] || {}).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; } });
+      if (best !== null) topModelo[mk] = { modelo: best, cant: porMesModelo[mk][best].cant, monto: porMesModelo[mk][best].monto };
+    });
+    const tTop = document.getElementById('tblTopModelo');
+    if (tTop) tTop.innerHTML = mesesOrden.filter(mk => topModelo[mk]).map(mk => { const t = topModelo[mk]; return `<tr><td>${mesLabel(mk)}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
+
+    // ---- Gráficos ----
+    function graficoDobleEje(canvasId, datos, labelFmt) {
+      const keys = Object.keys(datos).sort();
+      const cants = keys.map(l => datos[l].cant);
+      const montos = keys.map(l => datos[l].monto);
+      const labels = keys.map(l => labelFmt ? labelFmt(l) : l);
+      nuevoGrafico(canvasId, {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label:'Cantidad', data:cants, backgroundColor:'rgba(30,158,90,0.7)', borderColor:'#166534', borderWidth:1, yAxisID:'y' },
+          { label:'Monto (sin IVA)', data:montos, backgroundColor:'rgba(204,0,0,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
+          scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
+                    y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto (sin IVA)'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
+      });
+    }
+    graficoDobleEje('chartMes', porMes, mesLabel);
+    graficoDobleEje('chartEjecutivo', porEjecutivo);
+    graficoDobleEje('chartModelo', porModelo);
+
+    // Entregado por Mes y Modelo (barras apiladas por cantidad de unidades) — solo vehiculos
+    const elTop = document.getElementById('chartTopModelo');
+    if (elTop && typeof Chart !== 'undefined') {
+      const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
+      const PALETA = ['#cc0000','#1e9e5a','#0f3460','#f59e0b','#536dfe','#8b5cf6','#e11d48','#14b8a6','#db2777','#65a30d','#0891b2','#b45309'];
+      const datasets = modelosOrden.map((m, i) => ({
+        label: m.replace('HONDA ', ''),
+        data: mesesOrden.map(mk => (porMesModelo[mk] && porMesModelo[mk][m]) ? porMesModelo[mk][m].cant : 0),
+        backgroundColor: PALETA[i % PALETA.length],
+        stack: 'cant'
+      }));
+      nuevoGrafico('chartTopModelo', {
+        type: 'bar',
+        data: { labels: mesesOrden.map(mesLabel), datasets },
+        options: { responsive:true, maintainAspectRatio:false,
+          plugins: { legend:{display: modelosOrden.length <= 12}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} ud`}} },
+          scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Unidades'}} } }
+      });
+    }
+  }
+
+  // ---- Filtro por fecha (Desde / Hasta aplicados a deliveryDate) ----
+  function facturasFiltradas() {
+    const d = ((document.getElementById('fDesde') || {}).value || '');   // 'YYYY-MM-DD'
+    const h = ((document.getElementById('fHasta') || {}).value || '');
+    return datosFacturacion.facturas.filter(f => {
+      const fd = f.deliveryDate || '';
+      if (d && fd < d) return false;
+      if (h && fd > h) return false;
+      return true;
+    });
+  }
+  function actualizar() { renderFacturacion(facturasFiltradas()); }
+
+  ['fDesde','fHasta'].forEach(id => { const e = document.getElementById(id); if (e) e.addEventListener('change', actualizar); });
+  const btnLimpiar = document.getElementById('fLimpiar');
+  if (btnLimpiar) btnLimpiar.addEventListener('click', () => {
+    const d = document.getElementById('fDesde'), h = document.getElementById('fHasta');
+    if (d) d.value = '2026-01-01';
+    if (h) h.value = '2026-12-31';
+    actualizar();
+  });
+
+  actualizar();  // render inicial (todas las facturas entregadas 2026)
 } catch (e) {
   console.error('Error en el módulo Facturación:', e);
 }
