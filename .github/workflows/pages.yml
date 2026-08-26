@@ -22,15 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Generar inventario desde Odoo (solo lectura)
-        env:
-          ODOO_USER: ${{ secrets.ODOO_USER }}
-          ODOO_PASSWORD: ${{ secrets.ODOO_PASSWORD }}
-        run: python generar_inventario.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
