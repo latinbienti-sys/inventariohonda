@@ -150,6 +150,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="tabInventario">Inventario</button>
     <button class="tab-btn" data-tab="tabComercial">Status Comercial</button>
+    <button class="tab-btn" data-tab="tabEntregas">Entregas</button>
     <button class="tab-btn" data-tab="tabFacturacion">Facturación</button>
   </div>
 
@@ -158,16 +159,16 @@
 
   <!-- KPIs -->
   <div class="kpis">
-    <div class="kpi"><div class="v">19</div><div class="l">Total unidades en inventario</div></div>
+    <div class="kpi"><div class="v">18</div><div class="l">Total unidades en inventario</div></div>
     <div class="kpi green"><div class="v">4</div><div class="l">Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v">10</div><div class="l">Almacén Reservas</div></div>
     <div class="kpi red"><div class="v">1</div><div class="l">Almacén Reparación</div></div>
-    <div class="kpi indigo"><div class="v">4</div><div class="l">Facturado - No Entregado</div></div>
-    <div class="kpi gold"><div class="v cur">$ 608,600.00</div><div class="l">Valor total del inventario</div></div>
+    <div class="kpi indigo"><div class="v">3</div><div class="l">Facturado - No Entregado</div></div>
+    <div class="kpi gold"><div class="v cur">$ 576,700.00</div><div class="l">Valor total del inventario</div></div>
     <div class="kpi gold"><div class="v cur">$ 138,700.00</div><div class="l">Valor Almacén Principal</div></div>
     <div class="kpi yellow"><div class="v cur">$ 307,000.00</div><div class="l">Valor Almacén Reservas</div></div>
     <div class="kpi red"><div class="v cur">$ 27,900.00</div><div class="l">Valor Almacén Reparación</div></div>
-    <div class="kpi indigo"><div class="v cur">$ 135,000.00</div><div class="l">Valor Almacén Facturado</div></div>
+    <div class="kpi indigo"><div class="v cur">$ 103,100.00</div><div class="l">Valor Almacén Facturado</div></div>
   </div>
 
   <!-- Stock Real por Modelo -->
@@ -213,8 +214,8 @@
 
   </div><!-- /tabInventario -->
 
-  <!-- Panel: Facturación -->
-  <div class="tab-panel" id="tabFacturacion">
+  <!-- Panel: Entregas (módulo Ventas / sale.order) -->
+  <div class="tab-panel" id="tabEntregas">
 
     <!-- KPIs -->
     <div class="kpis" style="margin-bottom:20px;">
@@ -296,6 +297,91 @@
       </div>
     </div>
 
+  </div><!-- /tabEntregas -->
+
+  <!-- Panel: Facturación (módulo Facturación / account.move) -->
+  <div class="tab-panel" id="tabFacturacion">
+
+    <!-- KPIs -->
+    <div class="kpis" style="margin-bottom:20px;">
+      <div class="kpi"><div class="v" id="kpiFactUnidades">0</div><div class="l">Unidades Facturadas (vehículo)</div></div>
+      <div class="kpi green"><div class="v" id="kpiFactMonto">$ 0.00</div><div class="l">Monto Facturado (sin IVA)</div></div>
+    </div>
+
+    <!-- Filtro por fecha de factura -->
+    <div class="card" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+      <span style="font-weight:700; color:var(--accent);">Filtrar por fecha de factura:</span>
+      <label>Desde <input type="date" id="fDesdeF" value="2026-01-01" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <label>Hasta <input type="date" id="fHastaF" value="2026-12-31" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <button id="fLimpiarF" style="padding:6px 14px; border:none; border-radius:8px; background:var(--honda-red); color:#fff; font-weight:700; cursor:pointer;">Limpiar</button>
+    </div>
+
+    <!-- Por Mes -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Facturado por Mes (fecha de factura) — Unidades y Monto (sin IVA)</h3>
+      <div style="position:relative;height:300px;width:100%"><canvas id="chartMesF"></canvas></div>
+    </div>
+
+    <!-- Ejecutivo y Modelo -->
+    <div class="grid cols-2" style="margin-bottom:16px;">
+      <div class="card">
+        <h3>Facturado por Ejecutivo — Cantidad y Monto</h3>
+        <div style="position:relative;height:300px;width:100%"><canvas id="chartEjecutivoF"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Facturado por Modelo — Cantidad y Monto</h3>
+        <div style="position:relative;height:300px;width:100%"><canvas id="chartModeloF"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Por Mes y Modelo -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Facturado por Mes y Modelo — Cantidad de unidades</h3>
+      <div style="position:relative;height:320px;width:100%"><canvas id="chartTopModeloF"></canvas></div>
+      <div style="overflow-x:auto;margin-top:10px;">
+        <table>
+          <thead><tr><th>Mes</th><th>Modelo más vendido</th><th>Unidades</th><th>Monto</th></tr></thead>
+          <tbody id="tblTopModeloF"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detalle -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Detalle de Facturas</h3>
+      <div style="overflow-x:auto;">
+        <table class="sc-table">
+          <thead><tr><th>Factura</th><th>Cliente</th><th>Ejecutivo</th><th>Fecha</th><th>Status Operativo</th><th>Cantidad</th><th>Monto (sin IVA)</th><th>Modelos</th></tr></thead>
+          <tbody id="tblFacturasF"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Resumen Ejecutivo / Modelo / Mes -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
+      <div class="card">
+        <h3>Facturado por Ejecutivo</h3>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Ejecutivo</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblEjecutivosF"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h3>Facturado por Modelo</h3>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Modelo</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblModelosF"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h3>Facturado por Mes</h3>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Mes</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblMesesF"></tbody>
+        </table></div>
+      </div>
+    </div>
+
   </div><!-- /tabFacturacion -->
 
   <!-- Panel: Status Comercial -->
@@ -322,7 +408,7 @@
     </div>
   </div><!-- /tabComercial -->
 
-  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-26 14:33 UTC</span></footer>
+  <footer>LatinBienMotors — Honda Mérida | Inventario de Vehículos<br><span style="opacity:.7">Actualizado: 2026-08-26 15:58 UTC</span></footer>
 </div>
 
 <script>
@@ -330,7 +416,7 @@
 
 // ================== DATOS ==================
 const ODOO_BASE = "https://latinbienmotors.com";
-const unidades = [{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":35600.0,"contacto":"JESUS ALFONSO UGUETO LEAL","contacto_id":56365,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":35600.0,"contacto":"ORLANDO JOSE ALBORNOZ RODRIGUEZ","contacto_id":56307,"vin":"93HRV3860TK304265"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Gris Metalico","alma":"FNE","res":false,"qty":1,"costo":31900.0,"contacto":"HEBERTT JOSE SIRA RAMIREZ","contacto_id":56259,"vin":"93HRV3820TK303788"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"FNE","res":false,"qty":1,"costo":31900.0,"contacto":"KARLA ISAMAR PAREDES MOLINA","contacto_id":56426,"vin":"93HDG5840TK503090"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3860TK304092"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"LATINBIENMOTORS C.A","contacto_id":56081,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Plata Metalico","alma":"REPARACION","res":false,"qty":1,"costo":27900.0,"contacto":"","contacto_id":"","vin":"93HGN2670TK600308"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"EZEQUIEL PEREZ BARRETO","contacto_id":56378,"vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"EZEQUIEL PEREZ BARRETO","contacto_id":56378,"vin":"93HGN2670TK600220"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"MARLY CECILIA VIELMA DE PAREDES","contacto_id":56347,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"ELADIO GARCÍA","contacto_id":56383,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"JOSE HERNAN ROA RAD","contacto_id":56380,"vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"LABORATORIOS BIOFARCO C.A.","contacto_id":56412,"vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"MARITZA DEL CARMEN MOLINA MORENO","contacto_id":56407,"vin":"93HDG5840TK503048"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"MARIA SOLEDAD GONZALEZ REYES","contacto_id":56316,"vin":"93HDG5840TK503056"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"CHRISTAVEL CONTRERAS ZERPA","contacto_id":56400,"vin":"93HDG5840TK502968"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"ALEJANDRO RAFAEL LEZAMA SÁNCHEZ","contacto_id":56322,"vin":"93HDG5840TK504019"}];
+const unidades = [{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":35600.0,"contacto":"JESUS ALFONSO UGUETO LEAL","contacto_id":56365,"vin":"93HRV3860TK304112"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"FNE","res":false,"qty":1,"costo":35600.0,"contacto":"ORLANDO JOSE ALBORNOZ RODRIGUEZ","contacto_id":56307,"vin":"93HRV3860TK304265"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"FNE","res":false,"qty":1,"costo":31900.0,"contacto":"KARLA ISAMAR PAREDES MOLINA","contacto_id":56426,"vin":"93HDG5840TK503090"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3860TK304041"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3060TK304083"},{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Gris Metalico","alma":"PRINCIPAL","res":true,"qty":1,"costo":35600.0,"contacto":"","contacto_id":"","vin":"93HRV3860TK304092"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Plata Metalico","alma":"PRINCIPAL","res":false,"qty":1,"costo":31900.0,"contacto":"LATINBIENMOTORS C.A","contacto_id":56081,"vin":"93HRV3860TK303206"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Plata Metalico","alma":"REPARACION","res":false,"qty":1,"costo":27900.0,"contacto":"","contacto_id":"","vin":"93HGN2670TK600308"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Azul Cosmico","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"EZEQUIEL PEREZ BARRETO","contacto_id":56378,"vin":"93HGN2670TK600273"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Blanco Perlado","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"EZEQUIEL PEREZ BARRETO","contacto_id":56378,"vin":"93HGN2670TK600220"},{"modelo":"HONDA CITY 1.5L A/T EXL 2026","cat":"CASO DE USO 1","color":"Gris Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":27900.0,"contacto":"MARLY CECILIA VIELMA DE PAREDES","contacto_id":56347,"vin":"93HGN2670TK600247"},{"modelo":"HONDA HR-V 1.5L A/T LX 2026","cat":"All","color":"Blanco Perlado","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"ELADIO GARCÍA","contacto_id":56383,"vin":"93HRV3820TK303832"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"JOSE HERNAN ROA RAD","contacto_id":56380,"vin":"93HDG5840TK503985"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Azul Cosmico","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"LABORATORIOS BIOFARCO C.A.","contacto_id":56412,"vin":"93HDG5840TK503992"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"MARITZA DEL CARMEN MOLINA MORENO","contacto_id":56407,"vin":"93HDG5840TK503048"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Blanco","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"MARIA SOLEDAD GONZALEZ REYES","contacto_id":56316,"vin":"93HDG5840TK503056"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":false,"qty":1,"costo":31900.0,"contacto":"CHRISTAVEL CONTRERAS ZERPA","contacto_id":56400,"vin":"93HDG5840TK502968"},{"modelo":"HONDA WR-V 1.5L A/T EXL 2026","cat":"CASO DE USO 3","color":"Plata Metalico","alma":"RESERVAS","res":true,"qty":1,"costo":31900.0,"contacto":"ALEJANDRO RAFAEL LEZAMA SÁNCHEZ","contacto_id":56322,"vin":"93HDG5840TK504019"}];
 
 const group = arr => arr.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {});
 
@@ -489,13 +575,13 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-// ================== FACTURACIÓN (Odoo Ventas / sale.order) ==================
+// ================== ENTREGAS (Odoo Ventas / sale.order) ==================
 // x_status_operativos: 6=Entregado, 4=Aprobado, 0=Ninguno(gasto entrega), 8=Cancelado, 10/12=Congelado
 // Se agrupa por status operativo y por delivery date (fecha de entrega); por mes y por ejecutivo.
 // Datos REALES inyectados desde Odoo (módulo Ventas / sale.order) vía generar_inventario.py.
 try {
   const datosFacturacion = {
-    facturas: [{"nombre":"LBM-ORDEN-00076","cliente":"GERALDINE CAROLINA RINCON AÑEZ","ejecutivo":"DIEGO ARMANDO FERNANDEZ","deliveryDate":"2026-08-31","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"LBM-ORDEN-00064","cliente":"YADIRA COROMOTO ARIZA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-04","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00065","cliente":"ROMINA BARBACANE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-12","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00040","cliente":"RAFAEL ANTONIO TREJO ROMERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00057","cliente":"YOANA SORIMAR LACRUZ QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-30","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":0.0,"monto":0.0},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00046","cliente":"YADIRA COROMOTO NAVA BRACHO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00009","cliente":"NEYDUTH SALOME HIGUERA MORALES","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-05-06","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00027","cliente":"ROBERTO CRALOS DIAZ MORANTES","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-27","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00034","cliente":"DALIA MARIA SANCHEZ DE SULBARAN","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-08","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00026","cliente":"GREGORY ARCANGEL ARAQUE LOPEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0},{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":0.0,"monto":0.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00013","cliente":"RAMON BENITO VALBUENA RONDON","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00055","cliente":"GERARDO JOSE RAMIREZ FERNANDEZ...","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"LBM-ORDEN-00053","cliente":"JUHENDIS ESTHER VALLADARES LOPEZ F.P","ejecutivo":"JUHENDIS VALLADARES","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00050","cliente":"DARIO ALEJANDRO GARAY GONZALEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00048","cliente":"OSCAR ALI QUINTERO QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00030","cliente":"FERNANDO JOSE VERA USECHE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00032","cliente":"GUSTAVO BALZA RANGEL","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00044","cliente":"CARLA ANDREINA PEÑALOZA QUEVEDO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-19","statusOperativo":"6","modelos":["[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)"],"lineas":[{"modelo":"[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00036","cliente":"LUIS MIGUEL ANGULO ARELLANO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":39672.0}],"cantidad":1.0,"monto":39672.0},{"nombre":"LBM-ORDEN-00008","cliente":"LUIS ALBERTO ANGARITA VERGARA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":30900.0}],"cantidad":1.0,"monto":30900.0},{"nombre":"LBM-ORDEN-00004","cliente":"JAIR DANIEL MARTINEZ VALERO","ejecutivo":"M  GIBSON","deliveryDate":"2026-04-14","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00002","cliente":"ROSAURA MARQUEZ CARRERO","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":30700.0}],"cantidad":1.0,"monto":30700.0},{"nombre":"LBM-ORDEN-00041","cliente":"EDIMAR KATHERINE QUINTERO GARCIA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-21","statusOperativo":"6","modelos":["[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)","qty":1.0,"monto":30900.0}],"cantidad":1.0,"monto":30900.0},{"nombre":"LBM-ORDEN-00028","cliente":"MARYSBELIA CASAL PARRA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00038","cliente":"MARIA ANDREINA MORENO SALAZAR","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-23","statusOperativo":"6","modelos":["[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00001","cliente":"RAFAEL ANTONIO CONTRERAS LINDARTE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-16","statusOperativo":"6","modelos":["HONDA HR-V 1.5L A/T EXL 2026","[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)"],"lineas":[{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","qty":1.0,"monto":33600.0},{"modelo":"[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)","qty":0.0,"monto":0.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00003","cliente":"LUCILA CASTILLO DE GONZALEZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00005","cliente":"JORGE LUIS ROJAS CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)"],"lineas":[{"modelo":"[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00006","cliente":"AURA ELENA PEREZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-31","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00012","cliente":"NORELIS COLMENARES GALAVIZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-29","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00011","cliente":"LUIS BERNARDINO GIOVANNONE CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-21","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00007","cliente":"ANA MARIA NIGRO CARRILLO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-08","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00010","cliente":"FARMACIA FARMA JIRETH","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-28","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0}],
+    facturas: [{"nombre":"LBM-ORDEN-00076","cliente":"GERALDINE CAROLINA RINCON AÑEZ","ejecutivo":"DIEGO ARMANDO FERNANDEZ","deliveryDate":"2026-08-31","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"LBM-ORDEN-00071","cliente":"HEBERTT JOSE SIRA RAMIREZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-31","statusOperativo":"6","modelos":["[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00064","cliente":"YADIRA COROMOTO ARIZA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-04","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00065","cliente":"ROMINA BARBACANE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-12","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00040","cliente":"RAFAEL ANTONIO TREJO ROMERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00057","cliente":"YOANA SORIMAR LACRUZ QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-30","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":0.0,"monto":0.0},{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00046","cliente":"YADIRA COROMOTO NAVA BRACHO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00009","cliente":"NEYDUTH SALOME HIGUERA MORALES","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-05-06","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00027","cliente":"ROBERTO CRALOS DIAZ MORANTES","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-27","statusOperativo":"6","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00034","cliente":"DALIA MARIA SANCHEZ DE SULBARAN","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-08","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00026","cliente":"GREGORY ARCANGEL ARAQUE LOPEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0},{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":0.0,"monto":0.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00013","cliente":"RAMON BENITO VALBUENA RONDON","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-31","statusOperativo":"6","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00055","cliente":"GERARDO JOSE RAMIREZ FERNANDEZ...","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"LBM-ORDEN-00053","cliente":"JUHENDIS ESTHER VALLADARES LOPEZ F.P","ejecutivo":"JUHENDIS VALLADARES","deliveryDate":"2026-07-29","statusOperativo":"6","modelos":["[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00050","cliente":"DARIO ALEJANDRO GARAY GONZALEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00048","cliente":"OSCAR ALI QUINTERO QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","modelos":["[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00030","cliente":"FERNANDO JOSE VERA USECHE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00032","cliente":"GUSTAVO BALZA RANGEL","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-06-30","statusOperativo":"6","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00044","cliente":"CARLA ANDREINA PEÑALOZA QUEVEDO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-19","statusOperativo":"6","modelos":["[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)"],"lineas":[{"modelo":"[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00036","cliente":"LUIS MIGUEL ANGULO ARELLANO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":39672.0}],"cantidad":1.0,"monto":39672.0},{"nombre":"LBM-ORDEN-00008","cliente":"LUIS ALBERTO ANGARITA VERGARA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":30900.0}],"cantidad":1.0,"monto":30900.0},{"nombre":"LBM-ORDEN-00004","cliente":"JAIR DANIEL MARTINEZ VALERO","ejecutivo":"M  GIBSON","deliveryDate":"2026-04-14","statusOperativo":"6","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00002","cliente":"ROSAURA MARQUEZ CARRERO","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":30700.0}],"cantidad":1.0,"monto":30700.0},{"nombre":"LBM-ORDEN-00041","cliente":"EDIMAR KATHERINE QUINTERO GARCIA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-21","statusOperativo":"6","modelos":["[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)","qty":1.0,"monto":30900.0}],"cantidad":1.0,"monto":30900.0},{"nombre":"LBM-ORDEN-00028","cliente":"MARYSBELIA CASAL PARRA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"LBM-ORDEN-00038","cliente":"MARIA ANDREINA MORENO SALAZAR","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-23","statusOperativo":"6","modelos":["[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"LBM-ORDEN-00001","cliente":"RAFAEL ANTONIO CONTRERAS LINDARTE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-16","statusOperativo":"6","modelos":["HONDA HR-V 1.5L A/T EXL 2026","[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)"],"lineas":[{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","qty":1.0,"monto":33600.0},{"modelo":"[HR-VEXL26-R525P] HONDA HR-V 1.5L A/T EXL 2026 (Rojo Metalico)","qty":0.0,"monto":0.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00003","cliente":"LUCILA CASTILLO DE GONZALEZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00005","cliente":"JORGE LUIS ROJAS CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-26","statusOperativo":"6","modelos":["[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)"],"lineas":[{"modelo":"[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00006","cliente":"AURA ELENA PEREZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-31","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"LBM-ORDEN-00012","cliente":"NORELIS COLMENARES GALAVIZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-29","statusOperativo":"6","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00011","cliente":"LUIS BERNARDINO GIOVANNONE CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-21","statusOperativo":"6","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00007","cliente":"ANA MARIA NIGRO CARRILLO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-08","statusOperativo":"6","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"LBM-ORDEN-00010","cliente":"FARMACIA FARMA JIRETH","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-28","statusOperativo":"6","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0}],
     statusLabels: { '6':'Entregado','4':'Aprobado','0':'Ninguno (Gasto Entrega)','8':'Cancelado','10':'Congelado','12':'Congelado' },
     statusColors: { '6':'#1e9e5a','4':'#f59e0b','0':'#e11d48','8':'#64748b','10':'#8b5cf6','12':'#8b5cf6' },
   };
@@ -653,11 +739,166 @@ try {
 
   actualizar();  // render inicial (todas las facturas entregadas 2026)
 
-  // Re-render de graficos al abrir la pestaña Facturacion (Chart.js requiere el contenedor visible)
-  const btnFact = document.querySelector('.tab-btn[data-tab="tabFacturacion"]');
-  if (btnFact) btnFact.addEventListener('click', () => { actualizar(); });
+  // Re-render de graficos al abrir la pestaña Entregas (Chart.js requiere el contenedor visible)
+  const btnEnt = document.querySelector('.tab-btn[data-tab="tabEntregas"]');
+  if (btnEnt) btnEnt.addEventListener('click', () => { actualizar(); });
 } catch (e) {
-  console.error('Error en el módulo Facturación:', e);
+  console.error('Error en el módulo Entregas:', e);
+}
+
+// ================== FACTURACIÓN (Odoo módulo Facturación / account.move) ==================
+// Etiqueta VENTAVEHICULOCONSIG; status operativo: 'entregado' / 'facturado no entregado'.
+// Solo lineas de vehiculo (nombre con 'Honda'); monto = subtotal de vehiculo sin IVA.
+try {
+  const datosFacturas = {
+    facturas: [{"nombre":"INV/2026/00005/FAC000127","cliente":"JESUS ALFONSO UGUETO LEAL","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-24","statusOperativo":"9","statusLabel":"5. FACTURADO- NO ENTREGADO","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"INV/2026/00005/FAC000125","cliente":"KARLA ISAMAR PAREDES MOLINA","ejecutivo":"KAREN DANIELA NAVA","deliveryDate":"2026-08-24","statusOperativo":"9","statusLabel":"5. FACTURADO- NO ENTREGADO","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000122","cliente":"ROMINA BARBACANE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-22","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000120","cliente":"ORLANDO JOSE ALBORNOZ RODRIGUEZ","ejecutivo":"KAREN DANIELA NAVA","deliveryDate":"2026-08-22","statusOperativo":"9","statusLabel":"5. FACTURADO- NO ENTREGADO","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"INV/2026/00005/FAC000118","cliente":"HEBERTT JOSE SIRA RAMIREZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-22","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000117","cliente":"GERALDINE CAROLINA RINCON AÑEZ","ejecutivo":"DIEGO ARMANDO FERNANDEZ","deliveryDate":"2026-08-21","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"INV/2026/00005/FAC000115","cliente":"YADIRA COROMOTO ARIZA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-08-15","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000095","cliente":"RAMON BENITO VALBUENA RONDON","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-31","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000106","cliente":"YOANA SORIMAR LACRUZ QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-30","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000091","cliente":"GERARDO JOSE RAMIREZ FERNANDEZ...","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-07-29","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":35600.0}],"cantidad":1.0,"monto":35600.0},{"nombre":"INV/2026/00005/FAC000089","cliente":"JUHENDIS ESTHER VALLADARES LOPEZ F.P","ejecutivo":"JUHENDIS VALLADARES","deliveryDate":"2026-07-29","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[CITYEXL26-NH883P] HONDA CITY 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"INV/2026/00005/FAC000104","cliente":"ROBERTO CRALOS DIAZ MORANTES","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-27","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000085","cliente":"DARIO ALEJANDRO GARAY GONZALEZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000078","cliente":"FERNANDO JOSE VERA USECHE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-10","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000100","cliente":"DALIA MARIA SANCHEZ DE SULBARAN","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-08","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-904M] HONDA WR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000105","cliente":"YADIRA COROMOTO NAVA BRACHO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)"],"lineas":[{"modelo":"[WR-VEXL26-G553P] HONDA WR-V 1.5L A/T EXL 2026 (Azul Nórdico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000082","cliente":"OSCAR ALI QUINTERO QUINTERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-07-06","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH-904M] HONDA HR-V 1.5L A/T LX 2026 (Gris Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000108","cliente":"RAFAEL ANTONIO TREJO ROMERO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-30","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000074","cliente":"GUSTAVO BALZA RANGEL","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-06-30","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[WR-VEXL26-NH-830M] HONDA WR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000018","cliente":"NORELIS COLMENARES GALAVIZ","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-29","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"INV/2026/00005/FAC000055","cliente":"MARIA ANDREINA MORENO SALAZAR","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-23","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[CITYEXL26-B607M] HONDA CITY 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"INV/2026/00005/FAC000075","cliente":"CARLA ANDREINA PEÑALOZA QUEVEDO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-19","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)"],"lineas":[{"modelo":"[WR-VEXL26-NH-883P] HONDA WR-V 1.5L A/T EXL 2026 (Blanco)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000072","cliente":"LUIS MIGUEL ANGULO ARELLANO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":39672.0}],"cantidad":1.0,"monto":39672.0},{"nombre":"INV/2026/00005/FAC000069","cliente":"LUIS ALBERTO ANGARITA VERGARA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VLX26-B607M] HONDA HR-V 1.5L A/T LX 2026 (Azul Cosmico)","qty":1.0,"monto":30900.0}],"cantidad":1.0,"monto":30900.0},{"nombre":"INV/2026/00005/FAC000057","cliente":"MARYSBELIA CASAL PARRA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-11","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[WR-VEXL26-B607M] HONDA WR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":31900.0}],"cantidad":1.0,"monto":31900.0},{"nombre":"INV/2026/00005/FAC000039","cliente":"ANA MARIA NIGRO CARRILLO","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-06-08","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VEXL26-NH883P] HONDA HR-V 1.5L A/T EXL 2026 (Blanco Perlado)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"INV/2026/00005/FAC000037","cliente":"FARMACIA FARMA JIRETH","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-26","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH904M] HONDA HR-V 1.5L A/T EXL 2026 (Gris Metalico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"INV/2026/00005/FAC000041","cliente":"LUIS BERNARDINO GIOVANNONE CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-21","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"INV/2026/00005/FAC000060","cliente":"EDIMAR KATHERINE QUINTERO GARCIA","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-05-08","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)"],"lineas":[{"modelo":"[HR-VLX26-NH883P] HONDA HR-V 1.5L A/T LX 2026 (Blanco Perlado)","qty":1.0,"monto":30900.0}],"cantidad":1.0,"monto":30900.0},{"nombre":"INV/2026/00005/FAC000023","cliente":"NEYDUTH SALOME HIGUERA MORALES","ejecutivo":"GERARDO JOSE RAMIREZ FERNANDEZ","deliveryDate":"2026-05-06","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[CITYEXL26-NH830M] HONDA CITY 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":27900.0}],"cantidad":1.0,"monto":27900.0},{"nombre":"INV/2026/00005/FAC000068","cliente":"JORGE LUIS ROJAS CHACON","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-28","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)"],"lineas":[{"modelo":"[HR-VEXL26-NH912P] HONDA HR-V 1.5L A/T EXL 2026 (Gris Urbano)","qty":1.0,"monto":34200.0}],"cantidad":1.0,"monto":34200.0},{"nombre":"INV/2026/00002","cliente":"RAFAEL ANTONIO CONTRERAS LINDARTE","ejecutivo":"ROSMILA VALLADARES","deliveryDate":"2026-04-16","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["HONDA HR-V 1.5L A/T EXL 2026"],"lineas":[{"modelo":"HONDA HR-V 1.5L A/T EXL 2026","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"INV/2026/00005/FAC000067","cliente":"JAIR DANIEL MARTINEZ VALERO","ejecutivo":"M  GIBSON","deliveryDate":"2026-04-13","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VLX26-NH830M] HONDA HR-V 1.5L A/T LX 2026 (Plata Metalico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"INV/2026/00005/FAC000015","cliente":"AURA ELENA PEREZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-31","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)"],"lineas":[{"modelo":"[HR-VEXL26-B607M] HONDA HR-V 1.5L A/T EXL 2026 (Azul Cosmico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0},{"nombre":"INV/2026/00005/FAC000066","cliente":"ROSAURA MARQUEZ CARRERO","ejecutivo":"EDGARDO REINOZO","deliveryDate":"2026-03-25","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH830M] HONDA HR-V 1.5L A/T EXL 2026 (Plata Metalico)","qty":1.0,"monto":30700.0}],"cantidad":1.0,"monto":30700.0},{"nombre":"INV/2026/00005/FAC000011","cliente":"LUCILA CASTILLO DE GONZALEZ","ejecutivo":"M  GIBSON","deliveryDate":"2026-03-25","statusOperativo":"6","statusLabel":"6. CVG - ENTREGADO","modelos":["[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)"],"lineas":[{"modelo":"[HR-VEXL26-NH731P] HONDA HR-V 1.5L A/T EXL 2026 (Negro Metalico)","qty":1.0,"monto":33600.0}],"cantidad":1.0,"monto":33600.0}],
+  };
+
+  const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mesKey = (f) => (f && f.deliveryDate ? f.deliveryDate.slice(0,7) : '');
+  const mesLabel = (k) => { const p = (k||'').split('-'); return p.length===2 ? `${MESES[parseInt(p[1],10)-1]} ${p[0]}` : (k||''); };
+
+  let chartsF = {};
+  function destruirGraficosF() {
+    Object.keys(chartsF).forEach(id => { try { chartsF[id].destroy(); } catch (e) {} });
+    chartsF = {};
+  }
+  function nuevoGraficoF(id, config) {
+    const el = document.getElementById(id);
+    if (!el || typeof Chart === 'undefined') return null;
+    chartsF[id] = new Chart(el.getContext('2d'), config);
+    return chartsF[id];
+  }
+
+  function renderFacturas(lista) {
+    destruirGraficosF();
+    const porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
+    let totalUnidades = 0, montoTotal = 0;
+
+    lista.forEach(f => {
+      const mk = (f.deliveryDate || '').slice(0, 7);
+      const cant = f.cantidad || 0;
+      const monto = f.monto || 0;
+      totalUnidades += cant; montoTotal += monto;
+      if (!porMes[mk]) porMes[mk] = { cant:0, monto:0 };
+      porMes[mk].cant += cant; porMes[mk].monto += monto;
+      if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
+      porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
+      (f.lineas || []).forEach(l => {
+        const m = l.modelo;
+        const c = l.qty || 0, mn = l.monto || 0;
+        if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
+        porModelo[m].cant += c; porModelo[m].monto += mn;
+        if (!porMesModelo[mk]) porMesModelo[mk] = {};
+        if (!porMesModelo[mk][m]) porMesModelo[mk][m] = { cant:0, monto:0 };
+        porMesModelo[mk][m].cant += c; porMesModelo[mk][m].monto += mn;
+      });
+    });
+
+    const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setKpi('kpiFactUnidades', totalUnidades);
+    setKpi('kpiFactMonto', fmt(montoTotal));
+
+    const tFact = document.getElementById('tblFacturasF');
+    if (tFact) tFact.innerHTML = lista.map(f => {
+      const lbl = f.statusLabel || f.statusOperativo;
+      return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
+        <td>${f.deliveryDate}</td><td>${lbl}</td>
+        <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
+        <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
+    }).join('');
+
+    const tabla = (id, rows, totalRow) => {
+      const el = document.getElementById(id); if (!el) return;
+      el.innerHTML = rows.join('') + (totalRow || '');
+    };
+    const mesesOrden = Object.keys(porMes).sort();
+    tabla('tblEjecutivosF',
+      Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalUnidades}</td><td>${fmt(montoTotal)}</td></tr>`);
+    tabla('tblModelosF',
+      Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
+    tabla('tblMesesF',
+      mesesOrden.map(k=>`<tr><td>${mesLabel(k)}</td><td><b>${porMes[k].cant}</b></td><td><b>${fmt(porMes[k].monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalUnidades}</td><td>${fmt(montoTotal)}</td></tr>`);
+
+    const topModelo = {};
+    mesesOrden.forEach(mk => {
+      let best = null, bv = -1;
+      Object.entries(porMesModelo[mk] || {}).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; } });
+      if (best !== null) topModelo[mk] = { modelo: best, cant: porMesModelo[mk][best].cant, monto: porMesModelo[mk][best].monto };
+    });
+    const tTop = document.getElementById('tblTopModeloF');
+    if (tTop) tTop.innerHTML = mesesOrden.filter(mk => topModelo[mk]).map(mk => { const t = topModelo[mk]; return `<tr><td>${mesLabel(mk)}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
+
+    function graficoDobleEjeF(canvasId, datos, labelFmt) {
+      const keys = Object.keys(datos).sort();
+      const cants = keys.map(l => datos[l].cant);
+      const montos = keys.map(l => datos[l].monto);
+      const labels = keys.map(l => labelFmt ? labelFmt(l) : l);
+      nuevoGraficoF(canvasId, {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label:'Cantidad', data:cants, backgroundColor:'rgba(30,158,90,0.7)', borderColor:'#166534', borderWidth:1, yAxisID:'y' },
+          { label:'Monto (sin IVA)', data:montos, backgroundColor:'rgba(204,0,0,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
+          scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
+                    y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto (sin IVA)'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
+      });
+    }
+    graficoDobleEjeF('chartMesF', porMes, mesLabel);
+    graficoDobleEjeF('chartEjecutivoF', porEjecutivo);
+    graficoDobleEjeF('chartModeloF', porModelo);
+
+    const elTop = document.getElementById('chartTopModeloF');
+    if (elTop && typeof Chart !== 'undefined') {
+      const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
+      const PALETA = ['#cc0000','#1e9e5a','#0f3460','#f59e0b','#536dfe','#8b5cf6','#e11d48','#14b8a6','#db2777','#65a30d','#0891b2','#b45309'];
+      const datasets = modelosOrden.map((m, i) => ({
+        label: m.replace('HONDA ', ''),
+        data: mesesOrden.map(mk => (porMesModelo[mk] && porMesModelo[mk][m]) ? porMesModelo[mk][m].cant : 0),
+        backgroundColor: PALETA[i % PALETA.length],
+        stack: 'cant'
+      }));
+      nuevoGraficoF('chartTopModeloF', {
+        type: 'bar',
+        data: { labels: mesesOrden.map(mesLabel), datasets },
+        options: { responsive:true, maintainAspectRatio:false,
+          plugins: { legend:{display: modelosOrden.length <= 12}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} ud`}} },
+          scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Unidades'}} } }
+      });
+    }
+  }
+
+  function facturasFiltradasF() {
+    const d = ((document.getElementById('fDesdeF') || {}).value || '');
+    const h = ((document.getElementById('fHastaF') || {}).value || '');
+    return datosFacturas.facturas.filter(f => {
+      const fd = f.deliveryDate || '';
+      if (d && fd < d) return false;
+      if (h && fd > h) return false;
+      return true;
+    });
+  }
+  function actualizarF() { renderFacturas(facturasFiltradasF()); }
+
+  ['fDesdeF','fHastaF'].forEach(id => { const e = document.getElementById(id); if (e) e.addEventListener('change', actualizarF); });
+  const btnLimpiarF = document.getElementById('fLimpiarF');
+  if (btnLimpiarF) btnLimpiarF.addEventListener('click', () => {
+    const d = document.getElementById('fDesdeF'), h = document.getElementById('fHastaF');
+    if (d) d.value = '2026-01-01';
+    if (h) h.value = '2026-12-31';
+    actualizarF();
+  });
+
+  actualizarF();
+
+  const btnFactN = document.querySelector('.tab-btn[data-tab="tabFacturacion"]');
+  if (btnFactN) btnFactN.addEventListener('click', () => { actualizarF(); });
+} catch (e) {
+  console.error('Error en el módulo Facturación (invoices):', e);
 }
 
 // ================== STATUS COMERCIAL ==================
