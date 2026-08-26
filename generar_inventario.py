@@ -623,10 +623,15 @@ def _fetch_facturas(base, db, user, pwd):
         print(f"  FACTURAS: tag_field={tag_field} tag_value={tag_value} m2m={tag_is_m2m}")
 
     # Dominio
+    date_type = flds.get(date_field, {}).get('type')
+    if date_type == 'date':
+        d0, d1 = '2026-01-01', '2027-01-01'
+    else:
+        d0, d1 = '2026-01-01 04:00:00', '2027-01-01 04:00:00'
     domain = [
         [move_field, '=', 'out_invoice'],
-        [date_field, '>=', '2026-01-01 04:00:00'],
-        [date_field, '<', '2027-01-01 04:00:00'],
+        [date_field, '>=', d0],
+        [date_field, '<', d1],
     ]
     if tag_field and tag_value is not None and not tag_is_m2m:
         op = 'ilike' if flds[tag_field].get('type') == 'char' else '='
