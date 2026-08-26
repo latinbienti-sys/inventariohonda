@@ -540,7 +540,7 @@ def _fetch_facturacion(base, db, user, pwd):
 
 
 def get_facturacion():
-    """Facturación desde Odoo (módulo Ventas / sale.order) en latinbienmotors.com.
+    """Entregas desde Odoo (módulo Ventas / sale.order) en latinbienmotors.com.
     Solo entregados (x_status_operativos='6'), ventana 2026."""
     try:
         fact = _fetch_facturacion(BASE, DB, USER, PWD)
@@ -551,7 +551,217 @@ def get_facturacion():
         return []
 
 
-def build_html(units, status_comercial, facturacion=None):
+def _fetch_facturas(base, db, user, pwd):
+    """Consulta account.move (facturas) en latinbienmotors.com.
+    Filtra por etiqueta VENTAVEHICULOCONSIG y por status operativo
+    'entregado' / 'facturado no entregado'. Solo lineas de vehiculo
+    (nombre con 'Honda'); el monto es el subtotal del vehiculo sin IVA."""
+    cj = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    auth = _fact_rpc(opener, base + "/web/session/authenticate",
+                     {"db": db, "login": user, "password": pwd})
+    if not auth.get("result", {}).get("uid"):
+        raise RuntimeError("Fallo de autenticacion")
+
+    # Descubrir campos reales de account.move en este Odoo
+    flds = _fact_call_kw(opener, base, 'account.move', 'fields_get', [[]],
+                         {"attributes": ["type", "store", "selection", "relation"]})
+    move_field = 'move_type' if 'move_type' in flds else ('type' if 'type' in flds else None)
+    date_field = 'invoice_date' if 'invoice_date' in flds else (
+        'date' if 'date' in flds else ('create_date' if 'create_date' in flds else None))
+    status_field = 'x_status_operativos' if 'x_status_operativos' in flds else None
+    line_field = 'invoice_line_ids' if 'invoice_line_ids' in flds else None
+
+    # Campo de etiqueta (tag)
+    tag_field = None
+    for cand in ('x_invoice_tag', 'x_tag', 'x_etiqueta', 'invoice_tag', 'x_tag_ids'):
+        if cand in flds:
+            tag_field = cand
+            break
+    if tag_field is None:
+        for k in flds:
+            if 'tag' in k.lower() and k not in ('message_tag_ids',):
+                tag_field = k
+                break
+
+    # Campo de ejecutivo (salesperson)
+    user_field = None
+    for cand in ('user_id', 'x_ejecutivo', 'invoice_user_id'):
+        if cand in flds:
+            user_field = cand
+            break
+
+    if not move_field or not date_field:
+        print("  FACTURAS: no se encontro move_field/date_field en account.move")
+        return []
+
+    # Status operativo cuyo label contiene 'entregado' (entregado y facturado no entregado)
+    status_codes = []
+    status_map = {}
+    if status_field and isinstance(flds[status_field].get('selection'), list):
+        for val, label in flds[status_field]['selection']:
+            status_map[str(val)] = label
+            if 'entregado' in str(label).lower():
+                status_codes.append(val)
+    print(f"  FACTURAS: move_field={move_field} date_field={date_field} status_field={status_field} codes_entregado={status_codes}")
+
+    # Valor de la etiqueta VENTAVEHICULOCONSIG
+    tag_value = None
+    tag_is_m2m = False
+    if tag_field:
+        sel = flds[tag_field].get('selection')
+        if isinstance(sel, list):
+            for val, label in sel:
+                if str(val).strip().upper() == 'VENTAVEHICULOCONSIG' or str(label).strip().upper() == 'VENTAVEHICULOCONSIG':
+                    tag_value = val
+                    break
+        else:
+            if flds[tag_field].get('type') == 'many2many':
+                tag_is_m2m = True
+            else:
+                tag_value = 'VENTAVEHICULOCONSIG'
+        print(f"  FACTURAS: tag_field={tag_field} tag_value={tag_value} m2m={tag_is_m2m}")
+
+    # Dominio
+    domain = [
+        [move_field, '=', 'out_invoice'],
+        [date_field, '>=', '2026-01-01 04:00:00'],
+        [date_field, '<', '2027-01-01 04:00:00'],
+    ]
+    if tag_field and tag_value is not None and not tag_is_m2m:
+        op = 'ilike' if flds[tag_field].get('type') == 'char' else '='
+        domain.append([tag_field, op, tag_value])
+    if status_field and status_codes:
+        domain.append([status_field, 'in', status_codes])
+
+    # Si la etiqueta es m2m, resolver el id del tag en su modelo relacionado
+    if tag_field and tag_is_m2m and tag_value is None and flds[tag_field].get('relation'):
+        rel = flds[tag_field]['relation']
+        try:
+            tids = _fact_call_kw(opener, base, rel, 'search', [[['name', 'ilike', 'VENTAVEHICULOCONSIG']]], {"limit": 5})
+            if tids:
+                domain.append([tag_field, 'in', [tids[0]]])
+                print(f"  FACTURAS: tag m2m resuelto id={tids[0]} en {rel}")
+        except Exception as e:
+            print(f"  FACTURAS: no se pudo resolver tag m2m: {e}")
+
+    try:
+        ids = _fact_call_kw(opener, base, 'account.move', 'search', [domain], {"limit": 5000})
+    except Exception as e:
+        print(f"  FACTURAS: search fallo: {e}")
+        ids = []
+    if not ids:
+        print("  FACTURAS: sin registros para el dominio (revisa etiqueta/status)")
+        return []
+
+    read_fields = ['id', 'name', 'partner_id', date_field]
+    if status_field:
+        read_fields.append(status_field)
+    if user_field:
+        read_fields.append(user_field)
+    if line_field:
+        read_fields.append(line_field)
+
+    facturas = []
+    for i in range(0, len(ids), 300):
+        batch = ids[i:i + 300]
+        try:
+            recs = _fact_call_kw(opener, base, 'account.move', 'read', [batch, read_fields])
+            if recs:
+                facturas.extend(recs)
+        except Exception as e:
+            print(f"  FACTURAS: read fallo: {e}")
+            continue
+
+    # Recolectar lineas de factura
+    line_ids = []
+    for inv in facturas:
+        for lid in (inv.get(line_field) or []):
+            line_ids.append(lid)
+
+    lineas = []
+    if line_ids:
+        for i in range(0, len(line_ids), 300):
+            batch = line_ids[i:i + 300]
+            try:
+                recs = _fact_call_kw(opener, base, 'account.move.line', 'read', [batch, [
+                    'id', 'product_id', 'quantity', 'price_subtotal',
+                ]])
+                if recs:
+                    lineas.extend(recs)
+            except Exception as e:
+                print(f"  FACTURAS: error leyendo lineas: {e}")
+                continue
+
+    lpo = {}
+    for lr in lineas:
+        lid = lr['id']
+        for inv in facturas:
+            if lid in (inv.get(line_field) or []):
+                lpo.setdefault(inv['id'], []).append(lr)
+                break
+
+    # Solo lineas de vehiculo: su nombre debe decir "Honda" (excluye tramites, IVA, etc.)
+    def es_vehiculo(nombre):
+        return 'honda' in (nombre or '').lower()
+
+    out = []
+    for inv in facturas:
+        inv_id = inv['id']
+        nombre = inv.get('name', '')
+        partner = inv.get('partner_id')
+        cliente = partner[1] if isinstance(partner, list) and len(partner) > 1 else 'Desconocido'
+        fecha = str(inv.get(date_field) or '')[:10]
+        uid = inv.get(user_field) if user_field else None
+        ejecutivo = uid[1] if isinstance(uid, list) and len(uid) > 1 else 'Sin asignar'
+        raw_st = inv.get(status_field) if status_field else None
+        st_str = str(raw_st) if raw_st is not None else ''
+        st_label = status_map.get(st_str, st_str)
+
+        modelos = []
+        lineas_v = []
+        for lr in lpo.get(inv_id, []):
+            pid = lr.get('product_id')
+            pname = pid[1] if isinstance(pid, list) and len(pid) > 1 else 'Producto'
+            if not es_vehiculo(pname):
+                continue
+            qty = float(lr.get('quantity') or 0.0)
+            monto = float(lr.get('price_subtotal') or 0.0)   # subtotal SIN IVA
+            lineas_v.append({'modelo': pname, 'qty': qty, 'monto': monto})
+            modelos.append(pname)
+
+        cantidad = round(sum(l['qty'] for l in lineas_v), 2)
+        monto = round(sum(l['monto'] for l in lineas_v), 2)
+
+        out.append({
+            'nombre': nombre,
+            'cliente': cliente,
+            'ejecutivo': ejecutivo,
+            'deliveryDate': fecha,   # reutilizamos el campo para la fecha de factura
+            'statusOperativo': st_str,
+            'statusLabel': st_label,
+            'modelos': modelos,
+            'lineas': lineas_v,
+            'cantidad': cantidad,
+            'monto': monto,
+        })
+
+    return out
+
+
+def get_facturas():
+    """Facturación desde Odoo (módulo Facturación / account.move) en latinbienmotors.com.
+    Etiqueta VENTAVEHICULOCONSIG, status operativo entregado / facturado no entregado."""
+    try:
+        fact = _fetch_facturas(BASE, DB, USER, PWD)
+        print(f"FACTURAS: latinbienmotors.com registros={len(fact)}")
+        return fact
+    except Exception as e:
+        print(f"FACTURAS: error en latinbienmotors.com: {e}")
+        return []
+
+
+def build_html(units, status_comercial, facturacion=None, facturas=None):
     total = len(units)
     por_alma = {}
     for u in units:
@@ -570,6 +780,7 @@ def build_html(units, status_comercial, facturacion=None):
 
     status_js = json.dumps(status_comercial, ensure_ascii=False, separators=(",", ":"))
     fact_js = json.dumps(facturacion or [], ensure_ascii=False, separators=(",", ":"))
+    facturas_js = json.dumps(facturas or [], ensure_ascii=False, separators=(",", ":"))
 
     # KPIs de Status Comercial
     n_ordenes = len({r["id"] for r in status_comercial})
@@ -595,6 +806,7 @@ def build_html(units, status_comercial, facturacion=None):
     html = html.replace("__UNIDADES__", unidades_js)
     html = html.replace("__STATUS_COMERCIAL__", status_js)
     html = html.replace("__FACTURACION_JSON__", fact_js)
+    html = html.replace("__FACTURAS_JSON__", facturas_js)
     html = html.replace("__ODOO_BASE__", BASE)
     html = html.replace("__SC_ORDENES__", str(n_ordenes))
     html = html.replace("__SC_UNIDADES__", str(n_unidades))
@@ -789,6 +1001,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div class="tabs">
     <button class="tab-btn active" data-tab="tabInventario">Inventario</button>
     <button class="tab-btn" data-tab="tabComercial">Status Comercial</button>
+    <button class="tab-btn" data-tab="tabEntregas">Entregas</button>
     <button class="tab-btn" data-tab="tabFacturacion">Facturación</button>
   </div>
 
@@ -852,8 +1065,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   </div><!-- /tabInventario -->
 
-  <!-- Panel: Facturación -->
-  <div class="tab-panel" id="tabFacturacion">
+  <!-- Panel: Entregas (módulo Ventas / sale.order) -->
+  <div class="tab-panel" id="tabEntregas">
 
     <!-- KPIs -->
     <div class="kpis" style="margin-bottom:20px;">
@@ -931,6 +1144,91 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <div style="overflow-x:auto;"><table>
           <thead><tr><th>Mes</th><th>Cant</th><th>Monto</th></tr></thead>
           <tbody id="tblMeses"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+  </div><!-- /tabEntregas -->
+
+  <!-- Panel: Facturación (módulo Facturación / account.move) -->
+  <div class="tab-panel" id="tabFacturacion">
+
+    <!-- KPIs -->
+    <div class="kpis" style="margin-bottom:20px;">
+      <div class="kpi"><div class="v" id="kpiFactUnidades">0</div><div class="l">Unidades Facturadas (vehículo)</div></div>
+      <div class="kpi green"><div class="v" id="kpiFactMonto">$ 0.00</div><div class="l">Monto Facturado (sin IVA)</div></div>
+    </div>
+
+    <!-- Filtro por fecha de factura -->
+    <div class="card" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+      <span style="font-weight:700; color:var(--accent);">Filtrar por fecha de factura:</span>
+      <label>Desde <input type="date" id="fDesdeF" value="2026-01-01" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <label>Hasta <input type="date" id="fHastaF" value="2026-12-31" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <button id="fLimpiarF" style="padding:6px 14px; border:none; border-radius:8px; background:var(--honda-red); color:#fff; font-weight:700; cursor:pointer;">Limpiar</button>
+    </div>
+
+    <!-- Por Mes -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Facturado por Mes (fecha de factura) — Unidades y Monto (sin IVA)</h3>
+      <div style="position:relative;height:300px;width:100%"><canvas id="chartMesF"></canvas></div>
+    </div>
+
+    <!-- Ejecutivo y Modelo -->
+    <div class="grid cols-2" style="margin-bottom:16px;">
+      <div class="card">
+        <h3>Facturado por Ejecutivo — Cantidad y Monto</h3>
+        <div style="position:relative;height:300px;width:100%"><canvas id="chartEjecutivoF"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Facturado por Modelo — Cantidad y Monto</h3>
+        <div style="position:relative;height:300px;width:100%"><canvas id="chartModeloF"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Por Mes y Modelo -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Facturado por Mes y Modelo — Cantidad de unidades</h3>
+      <div style="position:relative;height:320px;width:100%"><canvas id="chartTopModeloF"></canvas></div>
+      <div style="overflow-x:auto;margin-top:10px;">
+        <table>
+          <thead><tr><th>Mes</th><th>Modelo más vendido</th><th>Unidades</th><th>Monto</th></tr></thead>
+          <tbody id="tblTopModeloF"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detalle -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Detalle de Facturas</h3>
+      <div style="overflow-x:auto;">
+        <table class="sc-table">
+          <thead><tr><th>Factura</th><th>Cliente</th><th>Ejecutivo</th><th>Fecha</th><th>Status Operativo</th><th>Cantidad</th><th>Monto (sin IVA)</th><th>Modelos</th></tr></thead>
+          <tbody id="tblFacturasF"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Resumen Ejecutivo / Modelo / Mes -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
+      <div class="card">
+        <h3>Facturado por Ejecutivo</h3>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Ejecutivo</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblEjecutivosF"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h3>Facturado por Modelo</h3>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Modelo</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblModelosF"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h3>Facturado por Mes</h3>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Mes</th><th>Cant</th><th>Monto</th></tr></thead>
+          <tbody id="tblMesesF"></tbody>
         </table></div>
       </div>
     </div>
@@ -1128,7 +1426,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-// ================== FACTURACIÓN (Odoo Ventas / sale.order) ==================
+// ================== ENTREGAS (Odoo Ventas / sale.order) ==================
 // x_status_operativos: 6=Entregado, 4=Aprobado, 0=Ninguno(gasto entrega), 8=Cancelado, 10/12=Congelado
 // Se agrupa por status operativo y por delivery date (fecha de entrega); por mes y por ejecutivo.
 // Datos REALES inyectados desde Odoo (módulo Ventas / sale.order) vía generar_inventario.py.
@@ -1292,11 +1590,166 @@ try {
 
   actualizar();  // render inicial (todas las facturas entregadas 2026)
 
-  // Re-render de graficos al abrir la pestaña Facturacion (Chart.js requiere el contenedor visible)
-  const btnFact = document.querySelector('.tab-btn[data-tab="tabFacturacion"]');
-  if (btnFact) btnFact.addEventListener('click', () => { actualizar(); });
+  // Re-render de graficos al abrir la pestaña Entregas (Chart.js requiere el contenedor visible)
+  const btnEnt = document.querySelector('.tab-btn[data-tab="tabEntregas"]');
+  if (btnEnt) btnEnt.addEventListener('click', () => { actualizar(); });
 } catch (e) {
-  console.error('Error en el módulo Facturación:', e);
+  console.error('Error en el módulo Entregas:', e);
+}
+
+// ================== FACTURACIÓN (Odoo módulo Facturación / account.move) ==================
+// Etiqueta VENTAVEHICULOCONSIG; status operativo: 'entregado' / 'facturado no entregado'.
+// Solo lineas de vehiculo (nombre con 'Honda'); monto = subtotal de vehiculo sin IVA.
+try {
+  const datosFacturas = {
+    facturas: __FACTURAS_JSON__,
+  };
+
+  const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mesKey = (f) => (f && f.deliveryDate ? f.deliveryDate.slice(0,7) : '');
+  const mesLabel = (k) => { const p = (k||'').split('-'); return p.length===2 ? `${MESES[parseInt(p[1],10)-1]} ${p[0]}` : (k||''); };
+
+  let chartsF = {};
+  function destruirGraficosF() {
+    Object.keys(chartsF).forEach(id => { try { chartsF[id].destroy(); } catch (e) {} });
+    chartsF = {};
+  }
+  function nuevoGraficoF(id, config) {
+    const el = document.getElementById(id);
+    if (!el || typeof Chart === 'undefined') return null;
+    chartsF[id] = new Chart(el.getContext('2d'), config);
+    return chartsF[id];
+  }
+
+  function renderFacturas(lista) {
+    destruirGraficosF();
+    const porMes = {}, porEjecutivo = {}, porModelo = {}, porMesModelo = {};
+    let totalUnidades = 0, montoTotal = 0;
+
+    lista.forEach(f => {
+      const mk = (f.deliveryDate || '').slice(0, 7);
+      const cant = f.cantidad || 0;
+      const monto = f.monto || 0;
+      totalUnidades += cant; montoTotal += monto;
+      if (!porMes[mk]) porMes[mk] = { cant:0, monto:0 };
+      porMes[mk].cant += cant; porMes[mk].monto += monto;
+      if (!porEjecutivo[f.ejecutivo]) porEjecutivo[f.ejecutivo] = { cant:0, monto:0 };
+      porEjecutivo[f.ejecutivo].cant += cant; porEjecutivo[f.ejecutivo].monto += monto;
+      (f.lineas || []).forEach(l => {
+        const m = l.modelo;
+        const c = l.qty || 0, mn = l.monto || 0;
+        if (!porModelo[m]) porModelo[m] = { cant:0, monto:0 };
+        porModelo[m].cant += c; porModelo[m].monto += mn;
+        if (!porMesModelo[mk]) porMesModelo[mk] = {};
+        if (!porMesModelo[mk][m]) porMesModelo[mk][m] = { cant:0, monto:0 };
+        porMesModelo[mk][m].cant += c; porMesModelo[mk][m].monto += mn;
+      });
+    });
+
+    const setKpi = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setKpi('kpiFactUnidades', totalUnidades);
+    setKpi('kpiFactMonto', fmt(montoTotal));
+
+    const tFact = document.getElementById('tblFacturasF');
+    if (tFact) tFact.innerHTML = lista.map(f => {
+      const lbl = f.statusLabel || f.statusOperativo;
+      return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
+        <td>${f.deliveryDate}</td><td>${lbl}</td>
+        <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
+        <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
+    }).join('');
+
+    const tabla = (id, rows, totalRow) => {
+      const el = document.getElementById(id); if (!el) return;
+      el.innerHTML = rows.join('') + (totalRow || '');
+    };
+    const mesesOrden = Object.keys(porMes).sort();
+    tabla('tblEjecutivosF',
+      Object.entries(porEjecutivo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalUnidades}</td><td>${fmt(montoTotal)}</td></tr>`);
+    tabla('tblModelosF',
+      Object.entries(porModelo).sort((a,b)=>b[1].monto-a[1].monto).map(([k,d])=>`<tr><td>${k.replace('HONDA ','')}</td><td><b>${d.cant}</b></td><td><b>${fmt(d.monto)}</b></td></tr>`),'');
+    tabla('tblMesesF',
+      mesesOrden.map(k=>`<tr><td>${mesLabel(k)}</td><td><b>${porMes[k].cant}</b></td><td><b>${fmt(porMes[k].monto)}</b></td></tr>`),
+      `<tr style="background:#eef2fb;font-weight:700"><td>TOTAL</td><td>${totalUnidades}</td><td>${fmt(montoTotal)}</td></tr>`);
+
+    const topModelo = {};
+    mesesOrden.forEach(mk => {
+      let best = null, bv = -1;
+      Object.entries(porMesModelo[mk] || {}).forEach(([mod,d]) => { if (d.cant > bv) { bv = d.cant; best = mod; } });
+      if (best !== null) topModelo[mk] = { modelo: best, cant: porMesModelo[mk][best].cant, monto: porMesModelo[mk][best].monto };
+    });
+    const tTop = document.getElementById('tblTopModeloF');
+    if (tTop) tTop.innerHTML = mesesOrden.filter(mk => topModelo[mk]).map(mk => { const t = topModelo[mk]; return `<tr><td>${mesLabel(mk)}</td><td><b>${t.modelo.replace('HONDA ','')}</b></td><td><b>${t.cant}</b></td><td><b>${fmt(t.monto)}</b></td></tr>`; }).join('');
+
+    function graficoDobleEjeF(canvasId, datos, labelFmt) {
+      const keys = Object.keys(datos).sort();
+      const cants = keys.map(l => datos[l].cant);
+      const montos = keys.map(l => datos[l].monto);
+      const labels = keys.map(l => labelFmt ? labelFmt(l) : l);
+      nuevoGraficoF(canvasId, {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label:'Cantidad', data:cants, backgroundColor:'rgba(30,158,90,0.7)', borderColor:'#166534', borderWidth:1, yAxisID:'y' },
+          { label:'Monto (sin IVA)', data:montos, backgroundColor:'rgba(204,0,0,0.6)', borderColor:'#cc0000', borderWidth:1, yAxisID:'y1' }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins: { legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Cantidad' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
+          scales: { y:{type:'linear',display:true,position:'left',title:{display:true,text:'Cantidad'},ticks:{precision:0},beginAtZero:true},
+                    y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Monto (sin IVA)'},grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)},beginAtZero:true} } }
+      });
+    }
+    graficoDobleEjeF('chartMesF', porMes, mesLabel);
+    graficoDobleEjeF('chartEjecutivoF', porEjecutivo);
+    graficoDobleEjeF('chartModeloF', porModelo);
+
+    const elTop = document.getElementById('chartTopModeloF');
+    if (elTop && typeof Chart !== 'undefined') {
+      const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
+      const PALETA = ['#cc0000','#1e9e5a','#0f3460','#f59e0b','#536dfe','#8b5cf6','#e11d48','#14b8a6','#db2777','#65a30d','#0891b2','#b45309'];
+      const datasets = modelosOrden.map((m, i) => ({
+        label: m.replace('HONDA ', ''),
+        data: mesesOrden.map(mk => (porMesModelo[mk] && porMesModelo[mk][m]) ? porMesModelo[mk][m].cant : 0),
+        backgroundColor: PALETA[i % PALETA.length],
+        stack: 'cant'
+      }));
+      nuevoGraficoF('chartTopModeloF', {
+        type: 'bar',
+        data: { labels: mesesOrden.map(mesLabel), datasets },
+        options: { responsive:true, maintainAspectRatio:false,
+          plugins: { legend:{display: modelosOrden.length <= 12}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} ud`}} },
+          scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Unidades'}} } }
+      });
+    }
+  }
+
+  function facturasFiltradasF() {
+    const d = ((document.getElementById('fDesdeF') || {}).value || '');
+    const h = ((document.getElementById('fHastaF') || {}).value || '');
+    return datosFacturas.facturas.filter(f => {
+      const fd = f.deliveryDate || '';
+      if (d && fd < d) return false;
+      if (h && fd > h) return false;
+      return true;
+    });
+  }
+  function actualizarF() { renderFacturas(facturasFiltradasF()); }
+
+  ['fDesdeF','fHastaF'].forEach(id => { const e = document.getElementById(id); if (e) e.addEventListener('change', actualizarF); });
+  const btnLimpiarF = document.getElementById('fLimpiarF');
+  if (btnLimpiarF) btnLimpiarF.addEventListener('click', () => {
+    const d = document.getElementById('fDesdeF'), h = document.getElementById('fHastaF');
+    if (d) d.value = '2026-01-01';
+    if (h) h.value = '2026-12-31';
+    actualizarF();
+  });
+
+  actualizarF();
+
+  const btnFactN = document.querySelector('.tab-btn[data-tab="tabFacturacion"]');
+  if (btnFactN) btnFactN.addEventListener('click', () => { actualizarF(); });
+} catch (e) {
+  console.error('Error en el módulo Facturación (invoices):', e);
 }
 
 // ================== STATUS COMERCIAL ==================
@@ -1364,7 +1817,12 @@ def main():
     print("Consultando Facturación (Odoo módulo Ventas)...")
     facturacion = get_facturacion()
     print(f"Facturas (entregas) cargadas: {len(facturacion)}")
-    html = build_html(units, status_comercial, facturacion)
+
+    print("Consultando Facturación (Odoo módulo Facturación / account.move)...")
+    facturas = get_facturas()
+    print(f"Facturas (módulo facturación) cargadas: {len(facturas)}")
+
+    html = build_html(units, status_comercial, facturacion, facturas)
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
     with open("Inventario_Carros_Honda.html", "w", encoding="utf-8") as f:
