@@ -622,12 +622,12 @@ def _fetch_facturas(base, db, user, pwd):
                 tag_value = 'VENTAVEHICULOCONSIG'
         print(f"  FACTURAS: tag_field={tag_field} tag_value={tag_value} m2m={tag_is_m2m}")
 
-    # Dominio
+    # Dominio (ventana historica ampliada a 2024 para la tendencia)
     date_type = flds.get(date_field, {}).get('type')
     if date_type == 'date':
-        d0, d1 = '2026-01-01', '2027-01-01'
+        d0, d1 = '2024-01-01', '2027-01-01'
     else:
-        d0, d1 = '2026-01-01 04:00:00', '2027-01-01 04:00:00'
+        d0, d1 = '2024-01-01 04:00:00', '2027-01-01 04:00:00'
     domain = [
         [move_field, '=', 'out_invoice'],
         [date_field, '>=', d0],
@@ -650,14 +650,26 @@ def _fetch_facturas(base, db, user, pwd):
         except Exception as e:
             print(f"  FACTURAS: no se pudo resolver tag m2m: {e}")
 
-    try:
-        ids = _fact_call_kw(opener, base, 'account.move', 'search', [domain], {"limit": 5000})
-    except Exception as e:
-        print(f"  FACTURAS: search fallo: {e}")
-        ids = []
+    # Busqueda paginada (la ventana historica puede superar 5000 registros)
+    ids = []
+    off = 0
+    while True:
+        try:
+            batch = _fact_call_kw(opener, base, 'account.move', 'search',
+                                  [domain], {"limit": 1000, "offset": off})
+        except Exception as e:
+            print(f"  FACTURAS: search fallo: {e}")
+            break
+        if not batch:
+            break
+        ids.extend(batch)
+        if len(batch) < 1000 or len(ids) >= 20000:
+            break
+        off += 1000
     if not ids:
         print("  FACTURAS: sin registros para el dominio (revisa etiqueta/status)")
         return []
+    print(f"  FACTURAS: total moves recuperados={len(ids)}")
 
     read_fields = ['id', 'name', 'partner_id', date_field]
     if status_field:
@@ -1167,9 +1179,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <!-- Filtro por fecha de factura -->
     <div class="card" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
       <span style="font-weight:700; color:var(--accent);">Filtrar por fecha de factura:</span>
-      <label>Desde <input type="date" id="fDesdeF" value="2026-01-01" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <label>Desde <input type="date" id="fDesdeF" value="2024-01-01" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
       <label>Hasta <input type="date" id="fHastaF" value="2026-12-31" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
       <button id="fLimpiarF" style="padding:6px 14px; border:none; border-radius:8px; background:var(--honda-red); color:#fff; font-weight:700; cursor:pointer;">Limpiar</button>
+    </div>
+
+    <!-- Tendencia Historica -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Tendencia Histórica de Facturación — Monto (sin IVA) y Unidades por mes</h3>
+      <div style="position:relative;height:320px;width:100%"><canvas id="chartTrendF"></canvas></div>
     </div>
 
     <!-- Por Mes -->
@@ -1708,6 +1726,29 @@ try {
     graficoDobleEjeF('chartEjecutivoF', porEjecutivo);
     graficoDobleEjeF('chartModeloF', porModelo);
 
+    // Tendencia historica de facturacion (linea + promedio movil 3 meses + unidades)
+    const mesesT = Object.keys(porMes).sort();
+    const labelsT = mesesT.map(mesLabel);
+    const montosT = mesesT.map(k => porMes[k].monto);
+    const cantsT = mesesT.map(k => porMes[k].cant);
+    const mmT = montosT.map((_, i) => {
+      const a = Math.max(0, i - 2);
+      const w = montosT.slice(a, i + 1);
+      return w.reduce((s, x) => s + x, 0) / w.length;
+    });
+    nuevoGraficoF('chartTrendF', {
+      type: 'line',
+      data: { labels: labelsT, datasets: [
+        { label:'Monto (sin IVA)', data: montosT, borderColor:'#cc0000', backgroundColor:'rgba(204,0,0,0.10)', borderWidth:2, fill:true, yAxisID:'y', tension:0.3, pointRadius:3 },
+        { label:'Promedio móvil 3 meses', data: mmT, borderColor:'#0f3460', borderWidth:2, borderDash:[6,4], fill:false, yAxisID:'y', tension:0.3, pointRadius:0 },
+        { label:'Unidades', data: cantsT, borderColor:'#1e9e5a', borderWidth:2, fill:false, yAxisID:'y1', tension:0.3, pointRadius:3 }
+      ]},
+      options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{display:true}, tooltip:{callbacks:{label:c => c.dataset.label==='Unidades' ? `${c.dataset.label}: ${c.parsed.y}` : `${c.dataset.label}: ${fmt(c.parsed.y)}`}} },
+        scales:{ y:{type:'linear',display:true,position:'left',title:{display:true,text:'Monto (sin IVA)'},ticks:{callback:v=>fmt(v)},beginAtZero:true},
+                 y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Unidades'},grid:{drawOnChartArea:false},ticks:{precision:0},beginAtZero:true} } }
+    });
+
     const elTop = document.getElementById('chartTopModeloF');
     if (elTop && typeof Chart !== 'undefined') {
       const modelosOrden = Object.keys(porModelo).sort((a,b) => porModelo[b].cant - porModelo[a].cant);
@@ -1744,7 +1785,7 @@ try {
   const btnLimpiarF = document.getElementById('fLimpiarF');
   if (btnLimpiarF) btnLimpiarF.addEventListener('click', () => {
     const d = document.getElementById('fDesdeF'), h = document.getElementById('fHastaF');
-    if (d) d.value = '2026-01-01';
+    if (d) d.value = '2024-01-01';
     if (h) h.value = '2026-12-31';
     actualizarF();
   });
