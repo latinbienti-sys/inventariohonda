@@ -1178,6 +1178,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div class="kpi"><div class="v" id="kpiFactPico">$ 0.00</div><div class="l">Mes pico de facturación (mayor monto)</div></div>
     </div>
 
+    <!-- KPIs del mes actual (independiente del filtro) -->
+    <div class="kpis" style="margin-bottom:20px;">
+      <div class="kpi green"><div class="v" id="kpiFactMesMonto">$ 0.00</div><div class="l">Facturado mes actual (sin IVA)</div></div>
+      <div class="kpi"><div class="v" id="kpiFactMesUnid">0</div><div class="l">Vehículos mes actual</div></div>
+      <div class="kpi"><div class="v" id="kpiFactMesFact">0</div><div class="l">Facturas mes actual</div></div>
+      <div class="kpi"><div class="v" id="kpiFactMesCli">0</div><div class="l">Clientes mes actual</div></div>
+    </div>
+
     <!-- Filtro por fecha de factura -->
     <div class="card" style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
       <span style="font-weight:700; color:var(--accent);">Filtrar por fecha de factura:</span>
@@ -1680,6 +1688,18 @@ try {
     let picoK = '', picoV = -1;
     Object.keys(porMes).forEach(k => { if (porMes[k].monto > picoV) { picoV = porMes[k].monto; picoK = k; } });
     setKpi('kpiFactPico', picoK ? `${mesLabel(picoK)}: ${fmt(picoV)}` : fmt(0));
+
+    // KPIs del mes actual (todos los datos, ignorando el filtro)
+    const ahora = new Date();
+    const mesActual = ahora.getFullYear() + '-' + String(ahora.getMonth() + 1).padStart(2, '0');
+    const fm = datosFacturas.facturas.filter(f => (f.deliveryDate || '').slice(0, 7) === mesActual);
+    const montoMes = fm.reduce((s, f) => s + (f.monto || 0), 0);
+    const unidMes = fm.reduce((s, f) => s + (f.cantidad || 0), 0);
+    const cliMes = new Set(fm.map(f => f.cliente)).size;
+    setKpi('kpiFactMesMonto', fmt(montoMes));
+    setKpi('kpiFactMesUnid', unidMes);
+    setKpi('kpiFactMesFact', fm.length);
+    setKpi('kpiFactMesCli', cliMes);
 
     const tFact = document.getElementById('tblFacturasF');
     if (tFact) tFact.innerHTML = lista.map(f => {
