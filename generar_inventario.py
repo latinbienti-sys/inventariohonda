@@ -754,6 +754,7 @@ def _fetch_facturas(base, db, user, pwd):
             'nombre': nombre,
             'cliente': cliente,
             'ejecutivo': ejecutivo,
+            'id': inv_id,
             'deliveryDate': fecha,   # reutilizamos el campo para la fecha de factura
             'statusOperativo': st_str,
             'statusLabel': st_label,
@@ -1174,6 +1175,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="kpis" style="margin-bottom:20px;">
       <div class="kpi"><div class="v" id="kpiFactUnidades">0</div><div class="l">Unidades Facturadas (vehículo)</div></div>
       <div class="kpi green"><div class="v" id="kpiFactMonto">$ 0.00</div><div class="l">Monto Facturado (sin IVA)</div></div>
+      <div class="kpi"><div class="v" id="kpiFactPico">$ 0.00</div><div class="l">Mes pico de facturación (mayor monto)</div></div>
     </div>
 
     <!-- Filtro por fecha de factura -->
@@ -1181,6 +1183,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <span style="font-weight:700; color:var(--accent);">Filtrar por fecha de factura:</span>
       <label>Desde <input type="date" id="fDesdeF" value="2024-01-01" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
       <label>Hasta <input type="date" id="fHastaF" value="2026-12-31" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px;"></label>
+      <label>Cliente <input type="text" id="fClienteF" placeholder="nombre del cliente" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; min-width:180px;"></label>
       <button id="fLimpiarF" style="padding:6px 14px; border:none; border-radius:8px; background:var(--honda-red); color:#fff; font-weight:700; cursor:pointer;">Limpiar</button>
     </div>
 
@@ -1673,10 +1676,16 @@ try {
     setKpi('kpiFactUnidades', totalUnidades);
     setKpi('kpiFactMonto', fmt(montoTotal));
 
+    // Mes pico de facturacion (mayor monto) en el rango filtrado
+    let picoK = '', picoV = -1;
+    Object.keys(porMes).forEach(k => { if (porMes[k].monto > picoV) { picoV = porMes[k].monto; picoK = k; } });
+    setKpi('kpiFactPico', picoK ? `${mesLabel(picoK)}: ${fmt(picoV)}` : fmt(0));
+
     const tFact = document.getElementById('tblFacturasF');
     if (tFact) tFact.innerHTML = lista.map(f => {
       const lbl = f.statusLabel || f.statusOperativo;
-      return `<tr><td><b>${f.nombre}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
+      const invLink = f.id ? `<a href="${ODOO_BASE}/web#id=${f.id}&model=account.move&view_type=form" target="_blank" rel="noopener" class="lk">${f.nombre}</a>` : f.nombre;
+      return `<tr><td><b>${invLink}</b></td><td>${f.cliente}</td><td>${f.ejecutivo}</td>
         <td>${f.deliveryDate}</td><td>${lbl}</td>
         <td><b>${f.cantidad}</b></td><td><b>${fmt(f.monto)}</b></td>
         <td>${f.modelos.map(m=>m.replace('HONDA ','')).join(', ')||'—'}</td></tr>`;
@@ -1772,21 +1781,24 @@ try {
   function facturasFiltradasF() {
     const d = ((document.getElementById('fDesdeF') || {}).value || '');
     const h = ((document.getElementById('fHastaF') || {}).value || '');
+    const c = ((document.getElementById('fClienteF') || {}).value || '').trim().toLowerCase();
     return datosFacturas.facturas.filter(f => {
       const fd = f.deliveryDate || '';
       if (d && fd < d) return false;
       if (h && fd > h) return false;
+      if (c && !((f.cliente || '').toLowerCase().includes(c))) return false;
       return true;
     });
   }
   function actualizarF() { renderFacturas(facturasFiltradasF()); }
 
-  ['fDesdeF','fHastaF'].forEach(id => { const e = document.getElementById(id); if (e) e.addEventListener('change', actualizarF); });
+  ['fDesdeF','fHastaF','fClienteF'].forEach(id => { const e = document.getElementById(id); if (e) e.addEventListener('input', actualizarF); });
   const btnLimpiarF = document.getElementById('fLimpiarF');
   if (btnLimpiarF) btnLimpiarF.addEventListener('click', () => {
-    const d = document.getElementById('fDesdeF'), h = document.getElementById('fHastaF');
+    const d = document.getElementById('fDesdeF'), h = document.getElementById('fHastaF'), c = document.getElementById('fClienteF');
     if (d) d.value = '2024-01-01';
     if (h) h.value = '2026-12-31';
+    if (c) c.value = '';
     actualizarF();
   });
 
