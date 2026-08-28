@@ -636,8 +636,12 @@ def _fetch_facturas(base, db, user, pwd):
     if tag_field and tag_value is not None and not tag_is_m2m:
         op = 'ilike' if flds[tag_field].get('type') == 'char' else '='
         domain.append([tag_field, op, tag_value])
-    if status_field and status_codes:
-        domain.append([status_field, 'in', status_codes])
+    # No filtramos por status operativo: x_status_operativos tiene etiquetas
+    # variables y excluia facturas reales (p.ej. algunas de agosto 2026). El
+    # status se sigue leyendo y mostrando en la tabla; asi reflejamos la
+    # facturacion real (tag VENTAVEHICULOCONSIG + linea Honda).
+    # if status_field and status_codes:
+    #     domain.append([status_field, 'in', status_codes])
 
     # Si la etiqueta es m2m, resolver el id del tag en su modelo relacionado
     if tag_field and tag_is_m2m and tag_value is None and flds[tag_field].get('relation'):
