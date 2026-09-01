@@ -629,7 +629,7 @@ def _fetch_facturas(base, db, user, pwd):
     else:
         d0, d1 = '2024-01-01 04:00:00', '2027-01-01 04:00:00'
     domain = [
-        [move_field, '=', 'out_invoice'],
+        [move_field, 'in', ['out_invoice', 'out_refund']],
         [date_field, '>=', d0],
         [date_field, '<', d1],
     ]
@@ -654,6 +654,8 @@ def _fetch_facturas(base, db, user, pwd):
         except Exception as e:
             print(f"  FACTURAS: no se pudo resolver tag m2m: {e}")
 
+    print(f"  FACTURAS: dominio={domain}")
+
     # Busqueda paginada (la ventana historica puede superar 5000 registros)
     ids = []
     off = 0
@@ -674,6 +676,18 @@ def _fetch_facturas(base, db, user, pwd):
         print("  FACTURAS: sin registros para el dominio (revisa etiqueta/status)")
         return []
     print(f"  FACTURAS: total moves recuperados={len(ids)}")
+
+    # Diagnóstico: leer primeros 5 para ver move_type y partner
+    if ids:
+        try:
+            sample = _fact_call_kw(opener, base, 'account.move', 'read',
+                                   [ids[:5], ['id', 'name', move_field, 'partner_id', date_field]])
+            for s in sample:
+                p = s.get('partner_id')
+                pn = p[1] if isinstance(p, list) and len(p) > 1 else str(p)
+                print(f"  DIAG: id={s['id']} name={s.get('name','')} {move_field}={s.get(move_field,'')} partner={pn} date={s.get(date_field,'')}")
+        except Exception as e:
+            print(f"  DIAG error: {e}")
 
     read_fields = ['id', 'name', 'partner_id', date_field]
     if status_field:
