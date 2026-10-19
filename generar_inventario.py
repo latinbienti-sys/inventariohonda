@@ -68,8 +68,8 @@ def clean_color(name):
 
 WH_MAP = {"LATIN": "LATIN", "CLBM": "PRINCIPAL", "RLBM": "RESERVAS", "RPLMH": "REPARACION", "FNE": "FNE"}
 
-# Costo unitario por modelo (se aplica a TODAS las unidades del modelo).
-# Definido por el usuario: no se modifica nada en Odoo.
+# Respaldo de costo unitario por modelo (solo si Odoo no reporta "Precio Base Real").
+# La fuente principal es el campo de Odoo x_costo_real_calculado.
 COSTO_POR_MODELO = {
     "HONDA CITY 1.5L A/T EXL 2026": 27900.00,
     "HONDA HR-V 1.5L A/T EXL 2026": 35600.00,
@@ -136,7 +136,7 @@ def get_data():
     # 3) Templates de vehiculos con color
     templates = call_kw("product.template", "search_read",
                         [[["attribute_line_ids.attribute_id", "=", color_attr_id]]],
-                        {"fields": ["display_name", "categ_id", "product_variant_ids", "standard_price"], "limit": 200})
+                        {"fields": ["display_name", "categ_id", "product_variant_ids", "standard_price", "x_costo_real_calculado"], "limit": 200})
 
     variant_ids = []
     for t in templates:
@@ -146,7 +146,7 @@ def get_data():
     # 4) Variantes -> color (ptav), modelo y costo
     variants = call_kw("product.product", "search_read",
                        [[["id", "in", variant_ids]]],
-                       {"fields": ["product_template_attribute_value_ids", "standard_price", "default_code", "display_name"]})
+                       {"fields": ["product_template_attribute_value_ids", "standard_price", "default_code", "display_name", "x_costo_real_calculado"]})
 
     ptav_ids = []
     for v in variants:
@@ -162,6 +162,16 @@ def get_data():
         for vid in t["product_variant_ids"]:
             if costo_by_prod.get(vid, 0.0) == 0.0 and costo_tpl > 0.0:
                 costo_by_prod[vid] = costo_tpl
+
+    # Costo real de Odoo: campo personalizado "Precio Base Real" (x_costo_real_calculado)
+    costo_real_by_prod = {}
+    for v in variants:
+        costo_real_by_prod[v["id"]] = float(v.get("x_costo_real_calculado") or 0.0)
+    for t in templates:
+        costo_real_tpl = float(t.get("x_costo_real_calculado") or 0.0)
+        for vid in t["product_variant_ids"]:
+            if costo_real_by_prod.get(vid, 0.0) == 0.0 and costo_real_tpl > 0.0:
+                costo_real_by_prod[vid] = costo_real_tpl
 
     color_by_ptav = {}
     if ptav_ids:
@@ -290,11 +300,16 @@ def get_data():
         if not vin:
             continue
         modelo = modelo_by_prod.get(prod_id, "")
-        costo = (e["valor"] / e["qty"]) if e["qty"] > 0 else 0.0
+        # 1) Costo real de Odoo ("Precio Base Real" x_costo_real_calculado): prevalece
+        costo = costo_real_by_prod.get(prod_id, 0.0)
+        # 2) Valoracion por VIN (stock.quant)
         if costo == 0.0:
-            costo = costo_by_prod.get(prod_id, 0.0)  # respaldo standard_price
-        # Costo manual por modelo (si esta definido, prevalece)
-        if modelo in COSTO_POR_MODELO:
+            costo = (e["valor"] / e["qty"]) if e["qty"] > 0 else 0.0
+        # 3) Respaldo standard_price
+        if costo == 0.0:
+            costo = costo_by_prod.get(prod_id, 0.0)
+        # 4) Respaldo manual por modelo (solo si Odoo no trae costo)
+        if costo == 0.0 and modelo in COSTO_POR_MODELO:
             costo = COSTO_POR_MODELO[modelo]
         units.append({
             "modelo": modelo,
